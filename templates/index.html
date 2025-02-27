@@ -1,0 +1,183 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Camera Control Interface</title>
+    <!-- Use local Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <style>
+        body {
+            padding-top: 20px;
+        }
+
+        h1 {
+            color: #2A7AE2;
+            margin-bottom: 20px;
+        }
+
+        #statusBox {
+            border: 1px solid #CCC;
+            background-color: #F0F0F0;
+            padding: 15px;
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .control {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Camera Control Interface</h1>
+        <div id="statusBox">Idle</div>
+
+        <!-- Camera Settings Section -->
+        <div class="mt-4">
+            <h2>Camera Settings</h2>
+            <form id="settingsForm">
+                {{ form_fields | safe }}
+                <button type="button" class="btn btn-primary control" onclick="updateSettings()">Update
+                    Settings</button>
+                <button type="button" class="btn btn-success control btn-block" onclick="takeImage()">Capture
+                    Image</button>
+            </form>
+        </div>
+        <!-- Row with Save, Capture, and Browse controls -->
+        <div class="mt-4">
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="save_dir">Save Directory:</label>
+                        <input type="text" id="save_dir" value="data" class="form-control setting">
+                    </div>
+                    <button type="button" class="btn btn-warning control btn-block" onclick="saveFiles()">Save
+                        Files</button>
+                    <a href="/browse" class="btn btn-secondary btn-block control">Browse Files</a>
+                </div>
+            </div>
+        </div>
+        <!-- Show Image Section (at bottom) -->
+        <div class="mt-4">
+            <h2>Show Image</h2>
+            <div>
+                <button type="button" class="btn btn-info control mt-2" onclick="showImage()">Refresh Image</button>
+            </div>
+            <div class="row">
+                <img id="capture_img" src="/show" alt="Captured image" class="img-fluid" style="max-width:500px;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Disable or enable all controls (inputs, selects, and buttons with class "control").
+        function setControlsEnabled(enabled) {
+            document.querySelectorAll("input.setting, select.setting, button.control").forEach(function (el) {
+                el.disabled = !enabled;
+            });
+        }
+
+        // Update camera settings via AJAX.
+        function updateSettings() {
+            setControlsEnabled(false);
+            document.getElementById("statusBox").textContent = "Updating settings...";
+            var settings = {};
+            var inputs = document.querySelectorAll("input.setting, select.setting");
+            inputs.forEach(function (input) {
+                settings[input.name] = input.value;
+            });
+            fetch("/update_settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        document.getElementById("statusBox").textContent = "Settings updated successfully!";
+                    } else {
+                        document.getElementById("statusBox").textContent = "Error updating settings: " + data.error;
+                    }
+                    setControlsEnabled(true);
+                })
+                .catch(error => {
+                    console.error("Error updating settings:", error);
+                    document.getElementById("statusBox").textContent = "Error updating settings.";
+                    setControlsEnabled(true);
+                });
+        }
+
+        // Capture image via AJAX.
+        function takeImage() {
+            setControlsEnabled(false);
+            document.getElementById("statusBox").textContent = "Starting capture...";
+            fetch("/capture", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("statusBox").textContent = data.status;
+                })
+                .catch(error => {
+                    console.error("Error capturing image:", error);
+                    document.getElementById("statusBox").textContent = "Error capturing image.";
+                    setControlsEnabled(true);
+                });
+        }
+
+        // Save files via AJAX.
+        function saveFiles() {
+            setControlsEnabled(false);
+            document.getElementById("statusBox").textContent = "Saving files...";
+            var saveDir = document.getElementById("save_dir").value;
+            fetch("/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "save_dir": saveDir })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        document.getElementById("statusBox").textContent = data.message;
+                    } else {
+                        document.getElementById("statusBox").textContent = "Error saving files: " + data.error;
+                    }
+                    setControlsEnabled(true);
+                })
+                .catch(error => {
+                    console.error("Error saving files:", error);
+                    document.getElementById("statusBox").textContent = "Error saving files.";
+                    setControlsEnabled(true);
+                });
+        }
+
+        // Poll capture status every second and update the status box.
+        function checkStatus() {
+            fetch("/status")
+                .then(response => response.json())
+                .then(data => {
+                    var statusBox = document.getElementById("statusBox");
+                    if (data.capturing) {
+                        statusBox.textContent = "Collecting image...";
+                        setControlsEnabled(false);
+                    } else if (data.finished) {
+                        statusBox.textContent = "Capture finished!";
+                        setControlsEnabled(true);
+                    } else {
+                        statusBox.textContent = "Idle";
+                        setControlsEnabled(true);
+                    }
+                });
+        }
+
+        // Refresh displayed image.
+        function showImage() {
+            document.getElementById("capture_img").src = "/show?" + new Date().getTime();
+        }
+
+        setInterval(checkStatus, 1000);
+    </script>
+</body>
+
+</html>

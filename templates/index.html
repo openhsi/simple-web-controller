@@ -52,7 +52,7 @@
                 <div class="col">
                     <div class="form-group">
                         <label for="save_dir">Save Directory:</label>
-                        <input type="text" id="save_dir" value="data" class="form-control setting">
+                        <input type="text" id="save_dir" value="/data" class="form-control setting">
                     </div>
                     <button type="button" class="btn btn-warning control btn-block" onclick="saveFiles()">Save
                         Files</button>
@@ -67,7 +67,7 @@
                 <button type="button" class="btn btn-info control mt-2" onclick="showImage()">Refresh Image</button>
             </div>
             <div class="row">
-                <img id="capture_img" src="/show" alt="Captured image" class="img-fluid" style="max-width:500px;">
+                <img id="capture_img" src="/api/show" alt="Captured image" class="img-fluid" style="max-width:500px;">
             </div>
         </div>
     </div>
@@ -80,21 +80,37 @@
             });
         }
 
-        // Update camera settings via AJAX.
+        // Update camera settings via AJAX with type conversion.
         function updateSettings() {
             setControlsEnabled(false);
             document.getElementById("statusBox").textContent = "Updating settings...";
             var settings = {};
             var inputs = document.querySelectorAll("input.setting, select.setting");
             inputs.forEach(function (input) {
-                settings[input.name] = input.value;
+                var value = input.value.trim();
+                // Convert the values to number based on field name.
+                if (value !== "") {
+                    if (input.name === "exposure_ms") {
+                        settings[input.name] = parseFloat(value);
+                    } else if (input.name === "n_lines" || input.name === "processing_lvl") {
+                        settings[input.name] = parseInt(value, 10);
+                    } else {
+                        settings[input.name] = value;
+                    }
+                }
             });
-            fetch("/update_settings", {
+            console.log("Sending settings:", settings);
+            fetch("/api/update_settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.status === "success") {
                         document.getElementById("statusBox").textContent = "Settings updated successfully!";
@@ -105,7 +121,7 @@
                 })
                 .catch(error => {
                     console.error("Error updating settings:", error);
-                    document.getElementById("statusBox").textContent = "Error updating settings.";
+                    document.getElementById("statusBox").textContent = "Error updating settings: " + error.message;
                     setControlsEnabled(true);
                 });
         }
@@ -114,7 +130,7 @@
         function takeImage() {
             setControlsEnabled(false);
             document.getElementById("statusBox").textContent = "Starting capture...";
-            fetch("/capture", { method: "POST" })
+            fetch("/api/capture", { method: "POST" })
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById("statusBox").textContent = data.status;
@@ -131,7 +147,7 @@
             setControlsEnabled(false);
             document.getElementById("statusBox").textContent = "Saving files...";
             var saveDir = document.getElementById("save_dir").value;
-            fetch("/save", {
+            fetch("/api/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ "save_dir": saveDir })
@@ -154,12 +170,23 @@
 
         // Poll capture status every second and update the status box.
         function checkStatus() {
-            fetch("/status")
+            fetch("/api/status")
                 .then(response => response.json())
                 .then(data => {
                     var statusBox = document.getElementById("statusBox");
                     if (data.capturing) {
-                        statusBox.textContent = "Collecting image...";
+                        // If progress info is available, render it.
+                        if (data.progress && data.progress.total) {
+                            var percentage = data.progress.percentage.toFixed(1);
+                            var current = data.progress.current;
+                            var total = data.progress.total;
+                            var elapsed = data.progress.elapsed.toFixed(1);
+                            var rate = data.progress.rate ? data.progress.rate.toFixed(1) : "N/A";
+                            statusBox.innerHTML = "Collecting image... " + percentage + "% (" + current + "/" + total + ")<br>" +
+                                "Elapsed: " + elapsed + " s, Rate: " + rate + " lines/s";
+                        } else {
+                            statusBox.textContent = "Collecting image...";
+                        }
                         setControlsEnabled(false);
                     } else if (data.finished) {
                         statusBox.textContent = "Capture finished!";
@@ -173,10 +200,10 @@
 
         // Refresh displayed image.
         function showImage() {
-            document.getElementById("capture_img").src = "/show?" + new Date().getTime();
+            document.getElementById("capture_img").src = "/api/show?" + new Date().getTime();
         }
 
-        setInterval(checkStatus, 1000);
+        setInterval(checkStatus, 500);
     </script>
 </body>
 

@@ -1,4 +1,4 @@
-![[Pasted image 20250324130015.png]]
+![[assets/logo.png]]
 
 ## Install dependancies
 

@@ -87,6 +87,40 @@ settings_model = api.model(
     },
 )
 
+# Model for advanced camera settings
+advanced_settings_model = api.model(
+    "AdvancedSettings",
+    {
+        "row_slice": fields.List(fields.Integer, 
+            required=False, description="Range of rows to read from detector [start, end]", example=[8, 913]
+        ),
+        "resolution": fields.List(fields.Integer, 
+            required=False, description="Image resolution [height, width]", example=[924, 1240]
+        ),
+        "fwhm_nm": fields.Float(
+            required=False, description="Full Width at Half Maximum (spectral resolution) in nanometers", example=4.0
+        ),
+        "luminance": fields.Float(
+            required=False, description="Luminance value for calibration", example=10000
+        ),
+        "binxy": fields.List(fields.Integer, 
+            required=False, description="Binning factors [x, y]", example=[1, 1]
+        ),
+        "win_offset": fields.List(fields.Integer, 
+            required=False, description="Window offset [x, y]", example=[96, 200]
+        ),
+        "win_resolution": fields.List(fields.Integer, 
+            required=False, description="Window resolution [width, height]", example=[924, 1240]
+        ),
+        "pixel_format": fields.String(
+            required=False, description="Pixel format (Mono8, Mono12, or Mono16)", example="Mono8"
+        ),
+    },
+)
+
+# Update the settings model to include advanced settings
+full_settings_model = api.inherit("FullSettings", settings_model, advanced_settings_model)
+
 save_model = api.model(
     "Save",
     {
@@ -271,12 +305,41 @@ def index():
 # -------------------------------------------------------------------------
 @api.route("/update_settings")
 class UpdateSettings(Resource):
-    @api.expect(settings_model, validate=True)
+    @api.expect(full_settings_model, validate=True)
     @api.response(200, "Settings updated successfully")
     @api.response(400, "Invalid input")
     @api.response(500, "Internal error while updating settings")
+    @api.doc(params={
+        'n_lines': 'Number of scan lines to capture',
+        'exposure_ms': 'Exposure time in milliseconds',
+        'processing_lvl': 'Processing level (-1 to 4)',
+        'row_slice': 'Range of rows to read from detector [start, end]',
+        'resolution': 'Image resolution [height, width]',
+        'fwhm_nm': 'Full Width at Half Maximum (spectral resolution) in nanometers',
+        'luminance': 'Luminance value for calibration',
+        'binxy': 'Binning factors [x, y]',
+        'win_offset': 'Window offset [x, y]',
+        'win_resolution': 'Window resolution [width, height]',
+        'pixel_format': 'Pixel format (Mono8, Mono12, or Mono16)'
+    })
     def post(self):
-        """Update the camera settings."""
+        """
+        Update camera settings (both basic and advanced).
+        
+        This endpoint handles both the basic settings (n_lines, exposure_ms, processing_lvl)
+        and the advanced detailed settings for the camera.
+        
+        Advanced settings include:
+        - row_slice: Range of rows to read from detector [start, end]
+        - resolution: Image resolution [height, width]
+        - fwhm_nm: Full Width at Half Maximum (spectral resolution) in nanometers
+        - exposure_ms: Exposure time in milliseconds
+        - luminance: Luminance value for calibration
+        - binxy: Binning factors [x, y]
+        - win_offset: Window offset [x, y]
+        - win_resolution: Window resolution [width, height]
+        - pixel_format: Pixel format (Mono8, Mono12, or Mono16)
+        """
         new_settings = request.get_json()
         app.logger.info("Received update_settings payload: %s", new_settings)
         

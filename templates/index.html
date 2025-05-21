@@ -51,20 +51,20 @@
         <!-- Tabbed interface -->
         <ul class="nav nav-tabs mt-4" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="control-tab" data-bs-toggle="tab" data-bs-target="#control" 
+                <button class="nav-link active" id="control-tab" data-bs-toggle="tab" data-bs-target="#control"
                     type="button" role="tab" aria-controls="control" aria-selected="true">Control</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" 
-                    type="button" role="tab" aria-controls="settings" aria-selected="false">Basic Settings</button>
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button"
+                    role="tab" aria-controls="settings" aria-selected="false">Basic Settings</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="detailed-tab" data-bs-toggle="tab" data-bs-target="#detailed" 
-                    type="button" role="tab" aria-controls="detailed" aria-selected="false">Advanced Settings</button>
+                <button class="nav-link" id="detailed-tab" data-bs-toggle="tab" data-bs-target="#detailed" type="button"
+                    role="tab" aria-controls="detailed" aria-selected="false">Advanced Settings</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="log-tab" data-bs-toggle="tab" data-bs-target="#log" 
-                    type="button" role="tab" aria-controls="log" aria-selected="false">Log</button>
+                <button class="nav-link" id="log-tab" data-bs-toggle="tab" data-bs-target="#log" type="button"
+                    role="tab" aria-controls="log" aria-selected="false">Log</button>
             </li>
         </ul>
 
@@ -74,23 +74,25 @@
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <h3>Capture Controls</h3>
-                        <button type="button" class="btn btn-success control btn-block w-100 mb-3" onclick="takeImage()">
+                        <button type="button" class="btn btn-success control btn-block w-100 mb-3"
+                            onclick="takeImage()">
                             Capture Image
                         </button>
-                        
+
                         <div class="form-group mt-4">
                             <label for="save_dir">Save Directory:</label>
                             <input type="text" id="save_dir" value="/data" class="form-control setting">
                         </div>
-                        <button type="button" class="btn btn-warning control btn-block w-100 mt-2" onclick="saveFiles()">
+                        <button type="button" class="btn btn-warning control btn-block w-100 mt-2"
+                            onclick="saveFiles()">
                             Save Files
                         </button>
                         <a href="/browse" class="btn btn-secondary btn-block w-100 mt-2 control">Browse Files</a>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <h3>Image Preview</h3>
-                        
+
                         <div class="card mb-3">
                             <div class="card-header bg-light">
                                 Display Settings
@@ -99,23 +101,27 @@
                                 <div class="row mb-2">
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="histEqCheck" onchange="updateImageSettings()">
-                                            <label class="form-check-label" for="histEqCheck">Histogram Equalization</label>
+                                            <input class="form-check-input" type="checkbox" id="histEqCheck"
+                                                onchange="updateImageSettings()">
+                                            <label class="form-check-label" for="histEqCheck">Histogram
+                                                Equalization</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="robustCheck" checked onchange="updateImageSettings()">
+                                            <input class="form-check-input" type="checkbox" id="robustCheck" checked
+                                                onchange="updateImageSettings()">
                                             <label class="form-check-label" for="robustCheck">Robust Contrast</label>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <!-- <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="bandSelect">Display Band:</label>
-                                            <select class="form-control" id="bandSelect" onchange="updateImageSettings()">
+                                            <select class="form-control" id="bandSelect"
+                                                onchange="updateImageSettings()">
                                                 <option value="rgb">RGB Composite</option>
                                                 <option value="red">Red Band</option>
                                                 <option value="green">Green Band</option>
@@ -123,11 +129,12 @@
                                                 <option value="nir">NIR Band</option>
                                             </select>
                                         </div>
-                                    </div>
+                                    </div> -->
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="stretchRange">Contrast Stretch:</label>
-                                            <select class="form-control" id="stretchRange" onchange="updateImageSettings()">
+                                            <select class="form-control" id="stretchRange"
+                                                onchange="updateImageSettings()">
                                                 <option value="0">Default</option>
                                                 <option value="1">Low (1%)</option>
                                                 <option value="2">Medium (2%)</option>
@@ -139,75 +146,68 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <button type="button" class="btn btn-info control mb-3" onclick="updateImageSettings()">Refresh Image</button>
-                        
+
+                        <button type="button" class="btn btn-info control mb-3" onclick="updateImageSettings()">Refresh
+                            Image</button>
+
                         <div>
-                            <img id="capture_img" src="/api/show" alt="Captured image" class="img-fluid" style="max-width:100%;">
+                            <img id="capture_img" src="/api/show" alt="Captured image" class="img-fluid"
+                                style="max-width:100%;">
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Basic Settings Tab -->
             <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
                 <h3 class="mt-3">Basic Camera Settings</h3>
                 <form id="settingsForm">
                     {{ form_fields | safe }}
-                    <button type="button" class="btn btn-primary control" onclick="updateSettings()">Update Settings</button>
+                    <button type="button" class="btn btn-primary control" onclick="updateSettings()">Update
+                        Settings</button>
                 </form>
             </div>
-            
+
             <!-- Detailed Settings Tab -->
             <div class="tab-pane fade" id="detailed" role="tabpanel" aria-labelledby="detailed-tab">
                 <h3 class="mt-3">Advanced Camera Settings</h3>
-                <p class="text-muted">These settings require deeper knowledge of the camera and may require camera restart to take effect.</p>
+                <p class="text-muted">These settings require deeper knowledge of the camera and may require camera
+                    restart to take effect.</p>
                 <form id="detailedSettingsForm">
                     {% for key, info in detailed_settings.items() %}
                     <div class="form-group mb-3">
                         <label for="{{ key }}">{{ key }}:</label>
                         <div class="input-group">
                             {% if info.type == 'array_int' %}
-                                {% for i in range(info.size) %}
-                                <input type="number" 
-                                       class="form-control detailed-setting" 
-                                       name="{{ key }}_{{ i }}" 
-                                       data-setting="{{ key }}"
-                                       data-index="{{ i }}"
-                                       data-type="{{ info.type }}"
-                                       min="{{ info.min_value }}" 
-                                       max="{{ info.max_value }}" 
-                                       value="{{ current_settings[key][i] if current_settings[key] is iterable and i < current_settings[key]|length else 0 }}">
-                                {% if not loop.last %}<span class="input-group-text">,</span>{% endif %}
-                                {% endfor %}
+                            {% for i in range(info.size) %}
+                            <input type="number" class="form-control detailed-setting" name="{{ key }}_{{ i }}"
+                                data-setting="{{ key }}" data-index="{{ i }}" data-type="{{ info.type }}"
+                                min="{{ info.min_value }}" max="{{ info.max_value }}"
+                                value="{{ current_settings[key][i] if current_settings[key] is iterable and i < current_settings[key]|length else 0 }}">
+                            {% if not loop.last %}<span class="input-group-text">,</span>{% endif %}
+                            {% endfor %}
                             {% elif info.type == 'float' %}
-                                <input type="number" 
-                                       class="form-control detailed-setting" 
-                                       name="{{ key }}" 
-                                       data-setting="{{ key }}"
-                                       data-type="{{ info.type }}"
-                                       min="{{ info.min_value }}" 
-                                       max="{{ info.max_value }}" 
-                                       step="0.1" 
-                                       value="{{ current_settings[key] }}">
+                            <input type="number" class="form-control detailed-setting" name="{{ key }}"
+                                data-setting="{{ key }}" data-type="{{ info.type }}" min="{{ info.min_value }}"
+                                max="{{ info.max_value }}" step="0.1" value="{{ current_settings[key] }}">
                             {% elif info.type == 'select' %}
-                                <select class="form-control detailed-setting" 
-                                        name="{{ key }}" 
-                                        data-setting="{{ key }}"
-                                        data-type="{{ info.type }}">
-                                    {% for option in info.options %}
-                                    <option value="{{ option }}" {% if current_settings[key] == option %}selected{% endif %}>{{ option }}</option>
-                                    {% endfor %}
-                                </select>
+                            <select class="form-control detailed-setting" name="{{ key }}" data-setting="{{ key }}"
+                                data-type="{{ info.type }}">
+                                {% for option in info.options %}
+                                <option value="{{ option }}" {% if current_settings[key]==option %}selected{% endif %}>
+                                    {{ option }}</option>
+                                {% endfor %}
+                            </select>
                             {% endif %}
                         </div>
                         <small class="form-text text-muted">{{ info.description }}</small>
                     </div>
                     {% endfor %}
-                    <button type="button" class="btn btn-primary control" onclick="updateDetailedSettings()">Update Advanced Settings</button>
+                    <button type="button" class="btn btn-primary control" onclick="updateDetailedSettings()">Update
+                        Advanced Settings</button>
                 </form>
             </div>
-            
+
             <!-- Log Tab -->
             <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
                 <div class="mt-3">
@@ -323,7 +323,7 @@
 
         // Track whether we've already shown the image after capture
         var captureJustFinished = false;
-        
+
         // Poll capture status every second and update the status box.
         function checkStatus() {
             fetch("/api/status")
@@ -340,7 +340,7 @@
                             var rate = data.progress.rate ? data.progress.rate.toFixed(1) : "N/A";
                             document.getElementById("statusBox").innerHTML = "Collecting image... " + percentage + "% (" + current + "/" + total + ")<br>" +
                                 "Elapsed: " + elapsed + " s, Rate: " + rate + " lines/s";
-                            
+
                             // Log progress at 25%, 50%, 75%, and 100% points
                             if (percentage >= 25 && !window.logged25 && percentage < 50) {
                                 logMessage("Capture 25% complete", "info");
@@ -362,7 +362,7 @@
                         // Automatically refresh the image when capture is finished
                         updateImageSettings();
                         captureJustFinished = true;
-                        
+
                         // Reset progress logging flags
                         window.logged25 = false;
                         window.logged50 = false;
@@ -379,22 +379,22 @@
             // Get all the image display settings
             const histEq = document.getElementById("histEqCheck").checked;
             const robust = document.getElementById("robustCheck").checked;
-            const band = document.getElementById("bandSelect").value;
+            // const band = document.getElementById("bandSelect").value;
             const stretch = document.getElementById("stretchRange").value;
-            
+
             // Build the query string with all parameters
             const params = new URLSearchParams({
                 hist_eq: histEq,
                 robust: robust,
-                band: band,
+                // band: band,
                 stretch: stretch,
                 t: new Date().getTime() // Cache buster
             });
-            
+
             // Update the image source with the new parameters
             document.getElementById("capture_img").src = "/api/show?" + params.toString();
         }
-        
+
         // Legacy function for backward compatibility
         function showImage() {
             updateImageSettings();
@@ -404,16 +404,16 @@
         function updateDetailedSettings() {
             setControlsEnabled(false);
             updateStatusBox("Updating advanced settings...");
-            
+
             // Create a settings object from the form inputs
             var settings = {};
             var arraySettings = {};
-            
+
             // Process all detailed settings inputs
-            document.querySelectorAll("#detailedSettingsForm .detailed-setting").forEach(function(input) {
+            document.querySelectorAll("#detailedSettingsForm .detailed-setting").forEach(function (input) {
                 var settingName = input.dataset.setting;
                 var settingType = input.dataset.type;
-                
+
                 if (settingType === 'array_int') {
                     // For array settings, collect all elements with the same setting name
                     if (!arraySettings[settingName]) {
@@ -427,39 +427,39 @@
                     settings[settingName] = input.value;
                 }
             });
-            
+
             // Add all array settings to the main settings object
             for (var key in arraySettings) {
                 settings[key] = arraySettings[key];
             }
-            
+
             console.log("Sending detailed settings:", settings);
-            
+
             // Send the settings to the API
             fetch("/api/update_settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings)
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => { throw new Error(text); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === "success") {
-                    updateStatusBox("Advanced settings updated successfully!", "success");
-                } else {
-                    updateStatusBox("Error updating settings: " + data.error, "error");
-                }
-                setControlsEnabled(true);
-            })
-            .catch(error => {
-                console.error("Error updating advanced settings:", error);
-                updateStatusBox("Error updating advanced settings: " + error.message, "error");
-                setControlsEnabled(true);
-            });
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === "success") {
+                        updateStatusBox("Advanced settings updated successfully!", "success");
+                    } else {
+                        updateStatusBox("Error updating settings: " + data.error, "error");
+                    }
+                    setControlsEnabled(true);
+                })
+                .catch(error => {
+                    console.error("Error updating advanced settings:", error);
+                    updateStatusBox("Error updating advanced settings: " + error.message, "error");
+                    setControlsEnabled(true);
+                });
         }
 
         // Message Log Functions
@@ -468,21 +468,21 @@
             if (message === 'Idle' || message.startsWith('Collecting image...')) {
                 return;
             }
-            
+
             const messageLog = document.getElementById('messageLog');
             const timestamp = new Date().toLocaleTimeString();
-            const cssClass = type === 'error' ? 'text-danger' : 
-                             type === 'success' ? 'text-success' : 'text-primary';
-            
+            const cssClass = type === 'error' ? 'text-danger' :
+                type === 'success' ? 'text-success' : 'text-primary';
+
             const messageElement = document.createElement('div');
             messageElement.className = cssClass;
             messageElement.innerHTML = `<small>${timestamp}</small> ${message}`;
-            
+
             messageLog.appendChild(messageElement);
-            
+
             // Auto-scroll to the bottom
             messageLog.scrollTop = messageLog.scrollHeight;
-            
+
             // If not currently on the log tab, add a notification indicator
             if (activeTabName !== 'log') {
                 const logTab = document.querySelector('#log-tab');
@@ -494,10 +494,10 @@
                 }
             }
         }
-        
+
         function clearMessageLog() {
             document.getElementById('messageLog').innerHTML = '';
-            
+
             // Remove notification badge if present
             const logTab = document.querySelector('#log-tab');
             const badge = logTab.querySelector('.badge');
@@ -505,43 +505,43 @@
                 badge.remove();
             }
         }
-        
+
         // Enhanced status box updater
         function updateStatusBox(message, logType = null) {
             document.getElementById("statusBox").innerHTML = message;
-            
+
             // Log the message if it's not a routine status update
             if (logType) {
                 logMessage(message, logType);
             }
         }
-        
+
         // Initialize Bootstrap tabs
         var activeTabName = 'control'; // Default active tab is now control
-        
-        document.addEventListener('DOMContentLoaded', function() {
+
+        document.addEventListener('DOMContentLoaded', function () {
             // Initialize tab click handlers - using Bootstrap's built-in tab functionality
-            document.querySelector('#settings-tab').addEventListener('shown.bs.tab', function() {
+            document.querySelector('#settings-tab').addEventListener('shown.bs.tab', function () {
                 activeTabName = 'settings';
             });
-            
-            document.querySelector('#detailed-tab').addEventListener('shown.bs.tab', function() {
+
+            document.querySelector('#detailed-tab').addEventListener('shown.bs.tab', function () {
                 activeTabName = 'detailed';
             });
-            
-            document.querySelector('#control-tab').addEventListener('shown.bs.tab', function() {
+
+            document.querySelector('#control-tab').addEventListener('shown.bs.tab', function () {
                 activeTabName = 'control';
                 // Refresh image when switching to control tab
                 updateImageSettings();
             });
-            
-            document.querySelector('#log-tab').addEventListener('shown.bs.tab', function() {
+
+            document.querySelector('#log-tab').addEventListener('shown.bs.tab', function () {
                 activeTabName = 'log';
-                
+
                 // Auto-scroll to the bottom of the log when switching to the log tab
                 const messageLog = document.getElementById('messageLog');
                 messageLog.scrollTop = messageLog.scrollHeight;
-                
+
                 // Remove notification badge when viewing the log
                 const logTab = document.querySelector('#log-tab');
                 const badge = logTab.querySelector('.badge');
@@ -549,7 +549,7 @@
                     badge.remove();
                 }
             });
-            
+
             // Add a welcome message to the log
             logMessage("Camera Control Interface ready", "success");
         });

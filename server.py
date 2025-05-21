@@ -64,9 +64,9 @@ app = Flask(__name__)
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(
     api_bp,
-    version="1.0",
-    title="Camera Capture API",
-    description="API for managing camera capture and file operations",
+    version="1.1",
+    title="OpenHSI  Capture API",
+    description="API for managing OpenHSI capture and file operations",
     doc="/apidocs",
     swagger_ui_parameters={"docExpansion": "full"},
 )  # Swagger UI will be at /api/apidocs

@@ -23,8 +23,10 @@ matplotlib.use("Agg")
 from openhsi.cameras import FlirCamera as openhsiCameraOrig
 
 # openhsi calibration settings
-json_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_settings_Mono8_bin1.json"
-cal_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_calibration_Mono8_bin1.nc"
+# json_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_settings_Mono8_bin1.json"
+# cal_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_calibration_Mono8_bin1.nc"
+json_path = "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_settings_Mono8_bin1.json"
+json_path = "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_settings_Mono8_bin1.json"
 
 
 # reimplemnted openhsi capture to allow capture progress feedback.
@@ -92,35 +94,56 @@ settings_model = api.model(
 advanced_settings_model = api.model(
     "AdvancedSettings",
     {
-        "row_slice": fields.List(fields.Integer, 
-            required=False, description="Range of rows to read from detector [start, end]", example=[8, 913]
+        "row_slice": fields.List(
+            fields.Integer,
+            required=False,
+            description="Range of rows to read from detector [start, end]",
+            example=[8, 913],
         ),
-        "resolution": fields.List(fields.Integer, 
-            required=False, description="Image resolution [height, width]", example=[924, 1240]
+        "resolution": fields.List(
+            fields.Integer,
+            required=False,
+            description="Image resolution [height, width]",
+            example=[924, 1240],
         ),
         "fwhm_nm": fields.Float(
-            required=False, description="Full Width at Half Maximum (spectral resolution) in nanometers", example=4.0
+            required=False,
+            description="Full Width at Half Maximum (spectral resolution) in nanometers",
+            example=4.0,
         ),
         "luminance": fields.Float(
             required=False, description="Luminance value for calibration", example=10000
         ),
-        "binxy": fields.List(fields.Integer, 
-            required=False, description="Binning factors [x, y]", example=[1, 1]
+        "binxy": fields.List(
+            fields.Integer,
+            required=False,
+            description="Binning factors [x, y]",
+            example=[1, 1],
         ),
-        "win_offset": fields.List(fields.Integer, 
-            required=False, description="Window offset [x, y]", example=[96, 200]
+        "win_offset": fields.List(
+            fields.Integer,
+            required=False,
+            description="Window offset [x, y]",
+            example=[96, 200],
         ),
-        "win_resolution": fields.List(fields.Integer, 
-            required=False, description="Window resolution [width, height]", example=[924, 1240]
+        "win_resolution": fields.List(
+            fields.Integer,
+            required=False,
+            description="Window resolution [width, height]",
+            example=[924, 1240],
         ),
         "pixel_format": fields.String(
-            required=False, description="Pixel format (Mono8, Mono12, or Mono16)", example="Mono8"
+            required=False,
+            description="Pixel format (Mono8, Mono12, or Mono16)",
+            example="Mono8",
         ),
     },
 )
 
 # Update the settings model to include advanced settings
-full_settings_model = api.inherit("FullSettings", settings_model, advanced_settings_model)
+full_settings_model = api.inherit(
+    "FullSettings", settings_model, advanced_settings_model
+)
 
 save_model = api.model(
     "Save",
@@ -153,59 +176,59 @@ DETAILED_SETTINGS = {
         "description": "Range of rows to read from detector [start, end]",
         "min_value": 0,
         "max_value": 1024,
-        "size": 2
+        "size": 2,
     },
     "resolution": {
         "type": "array_int",
         "description": "Image resolution [height, width]",
         "min_value": 1,
         "max_value": 2048,
-        "size": 2
+        "size": 2,
     },
     "fwhm_nm": {
         "type": "float",
         "description": "Full Width at Half Maximum (spectral resolution) in nanometers",
         "min_value": 0.1,
-        "max_value": 100
+        "max_value": 100,
     },
     "exposure_ms": {
         "type": "float",
         "description": "Exposure time in milliseconds",
         "min_value": 0.1,
-        "max_value": 1000
+        "max_value": 1000,
     },
     "luminance": {
         "type": "float",
         "description": "Luminance value for calibration",
         "min_value": 0,
-        "max_value": 100000
+        "max_value": 100000,
     },
     "binxy": {
         "type": "array_int",
         "description": "Binning factors [x, y]",
         "min_value": 1,
         "max_value": 8,
-        "size": 2
+        "size": 2,
     },
     "win_offset": {
         "type": "array_int",
         "description": "Window offset [x, y]",
         "min_value": 0,
         "max_value": 2048,
-        "size": 2
+        "size": 2,
     },
     "win_resolution": {
         "type": "array_int",
         "description": "Window resolution [width, height]",
         "min_value": 1,
         "max_value": 2048,
-        "size": 2
+        "size": 2,
     },
     "pixel_format": {
         "type": "select",
         "description": "Pixel format",
-        "options": ["Mono8", "Mono12", "Mono16"]
-    }
+        "options": ["Mono8", "Mono12", "Mono16"],
+    },
 }
 
 # Global flags and lock for capture status.
@@ -217,16 +240,19 @@ collection_lock = threading.Lock()
 log_messages = []
 log_lock = threading.Lock()
 
+
 def add_log_message(message, message_type="info"):
     """Add a message to the log with timestamp and type."""
     with log_lock:
         timestamp = int(time.time() * 1000)  # milliseconds since epoch
-        log_messages.append({
-            "timestamp": timestamp,
-            "time": time.strftime("%H:%M:%S"),
-            "message": message,
-            "type": message_type
-        })
+        log_messages.append(
+            {
+                "timestamp": timestamp,
+                "time": time.strftime("%H:%M:%S"),
+                "message": message,
+                "type": message_type,
+            }
+        )
         # Keep only the last 100 messages
         if len(log_messages) > 100:
             log_messages.pop(0)
@@ -302,7 +328,7 @@ def index():
                 f'<input type="text" id="{key}" name="{key}" class="form-control setting" value="{value}">'
                 f"</div>"
             )
-    
+
     # Get the current camera settings for the detailed tab
     current_settings = {}
     for setting_key in DETAILED_SETTINGS.keys():
@@ -317,12 +343,12 @@ def index():
                 current_settings[setting_key] = 0.0
             elif setting_info["type"] == "select":
                 current_settings[setting_key] = setting_info.get("options", [""])[0]
-    
+
     return render_template(
-        "index.html", 
-        form_fields=form_fields, 
+        "index.html",
+        form_fields=form_fields,
         detailed_settings=DETAILED_SETTINGS,
-        current_settings=current_settings
+        current_settings=current_settings,
     )
 
 
@@ -333,26 +359,28 @@ class UpdateSettings(Resource):
     @api.response(200, "Settings updated successfully")
     @api.response(400, "Invalid input")
     @api.response(500, "Internal error while updating settings")
-    @api.doc(params={
-        'n_lines': 'Number of scan lines to capture',
-        'exposure_ms': 'Exposure time in milliseconds',
-        'processing_lvl': 'Processing level (-1 to 4)',
-        'row_slice': 'Range of rows to read from detector [start, end]',
-        'resolution': 'Image resolution [height, width]',
-        'fwhm_nm': 'Full Width at Half Maximum (spectral resolution) in nanometers',
-        'luminance': 'Luminance value for calibration',
-        'binxy': 'Binning factors [x, y]',
-        'win_offset': 'Window offset [x, y]',
-        'win_resolution': 'Window resolution [width, height]',
-        'pixel_format': 'Pixel format (Mono8, Mono12, or Mono16)'
-    })
+    @api.doc(
+        params={
+            "n_lines": "Number of scan lines to capture",
+            "exposure_ms": "Exposure time in milliseconds",
+            "processing_lvl": "Processing level (-1 to 4)",
+            "row_slice": "Range of rows to read from detector [start, end]",
+            "resolution": "Image resolution [height, width]",
+            "fwhm_nm": "Full Width at Half Maximum (spectral resolution) in nanometers",
+            "luminance": "Luminance value for calibration",
+            "binxy": "Binning factors [x, y]",
+            "win_offset": "Window offset [x, y]",
+            "win_resolution": "Window resolution [width, height]",
+            "pixel_format": "Pixel format (Mono8, Mono12, or Mono16)",
+        }
+    )
     def post(self):
         """
         Update camera settings (both basic and advanced).
-        
+
         This endpoint handles both the basic settings (n_lines, exposure_ms, processing_lvl)
         and the advanced detailed settings for the camera.
-        
+
         Advanced settings include:
         - row_slice: Range of rows to read from detector [start, end]
         - resolution: Image resolution [height, width]
@@ -366,13 +394,13 @@ class UpdateSettings(Resource):
         """
         new_settings = request.get_json()
         app.logger.info("Received update_settings payload: %s", new_settings)
-        
+
         # Track which detailed settings were provided
         detailed_settings_provided = {}
         for key in DETAILED_SETTINGS.keys():
             if key in new_settings:
                 detailed_settings_provided[key] = new_settings[key]
-        
+
         try:
             # Validate and parse basic settings
             if "n_lines" in new_settings and new_settings["n_lines"] != "":
@@ -387,8 +415,8 @@ class UpdateSettings(Resource):
             else:
                 # If no exposure is provided (e.g., when updating only detailed settings)
                 # and we already have one in the camera, use the current exposure
-                if hasattr(cam, 'settings') and 'exposure_ms' in cam.settings:
-                    new_exposure = cam.settings['exposure_ms']
+                if hasattr(cam, "settings") and "exposure_ms" in cam.settings:
+                    new_exposure = cam.settings["exposure_ms"]
                 else:
                     raise ValueError(
                         "Exposure time (exposure_ms) is required and must be a number."
@@ -412,10 +440,12 @@ class UpdateSettings(Resource):
             if new_settings["n_lines"] is not None:
                 cam.reinitialise(n_lines=new_settings["n_lines"])
             cam.reinitialise(processing_lvl=new_pl)
-            
+
             # Update detailed settings if provided
             if detailed_settings_provided:
-                app.logger.info("Updating detailed settings: %s", detailed_settings_provided)
+                app.logger.info(
+                    "Updating detailed settings: %s", detailed_settings_provided
+                )
                 # We should actually use the cam's API or configuration to update these settings
                 # This implementation would depend on the specifics of the OpenHSI camera API
                 # For now, we'll just log them and pretend we updated them
@@ -423,17 +453,20 @@ class UpdateSettings(Resource):
                     app.logger.info(f"Would update {key} to {value}")
                     # In a real implementation, you would call the appropriate camera API methods
                     # Example: cam.set_setting(key, value)
-                
+
             with collection_lock:
                 global capture_finished
                 capture_finished = False
-            
+
             # Add to log
             if detailed_settings_provided:
                 add_log_message(f"Camera advanced settings updated", "success")
             else:
-                add_log_message(f"Camera basic settings updated - exposure: {new_exposure}ms, lines: {new_settings['n_lines'] if new_settings['n_lines'] is not None else 'unchanged'}, processing: {new_pl}", "success")
-            
+                add_log_message(
+                    f"Camera basic settings updated - exposure: {new_exposure}ms, lines: {new_settings['n_lines'] if new_settings['n_lines'] is not None else 'unchanged'}, processing: {new_pl}",
+                    "success",
+                )
+
             return {"status": "success"}, 200
         except Exception as e:
             app.logger.error("Error updating settings: %s", e, exc_info=True)
@@ -468,7 +501,9 @@ class SaveFiles(Resource):
         save_dir = data.get("save_dir", "/data")
         try:
             cam.save(save_dir=save_dir)
-            filepath = f"{cam.directory}/{cam.timestamps[0].strftime('%Y_%m_%d-%H_%M_%S')}.nc"
+            filepath = (
+                f"{cam.directory}/{cam.timestamps[0].strftime('%Y_%m_%d-%H_%M_%S')}.nc"
+            )
             add_log_message(f"Files saved to {save_dir}", "success")
             return {
                 "status": "success",
@@ -497,31 +532,33 @@ class Status(Resource):
 class ShowImage(Resource):
     @api.response(200, "Image retrieved successfully")
     @api.response(204, "No Content – capture not finished or image generation error")
-    @api.param('hist_eq', 'Apply histogram equalization', type='boolean')
-    @api.param('robust', 'Apply robust contrast stretching', type='boolean')
-    @api.param('band', 'Band to display (rgb, red, green, blue, nir)', type='string')
-    @api.param('stretch', 'Contrast stretch percentage', type='integer')
+    @api.param("hist_eq", "Apply histogram equalization", type="boolean")
+    @api.param("robust", "Apply robust contrast stretching", type="boolean")
+    @api.param("band", "Band to display (rgb, red, green, blue, nir)", type="string")
+    @api.param("stretch", "Contrast stretch percentage", type="integer")
     def get(self):
         """Retrieve the captured image as a PNG file with display options."""
         with collection_lock:
             if not capture_finished:
                 return "", 204
-        
+
         # Parse display parameters
-        hist_eq = request.args.get('hist_eq', 'false').lower() == 'true'
-        robust = request.args.get('robust', 'true').lower() == 'true'
-        band = request.args.get('band', 'rgb')
-        stretch = int(request.args.get('stretch', '0'))
-        
-        app.logger.info(f"Showing image with settings - hist_eq: {hist_eq}, robust: {robust}, band: {band}, stretch: {stretch}")
-        
+        hist_eq = request.args.get("hist_eq", "false").lower() == "true"
+        robust = request.args.get("robust", "true").lower() == "true"
+        band = request.args.get("band", "rgb")
+        stretch = int(request.args.get("stretch", "0"))
+
+        app.logger.info(
+            f"Showing image with settings - hist_eq: {hist_eq}, robust: {robust}, band: {band}, stretch: {stretch}"
+        )
+
         try:
             # Note: This is a simplified implementation - the actual implementation
             # would depend on what parameters the cam.show() method actually supports
-            
+
             # Basic parameters that cam.show() already supports
             fig = cam.show(plot_lib="matplotlib", hist_eq=hist_eq, robust=robust)
-            
+
             # Note: Additional parameters like band selection and stretch percentage
             # would need to be implemented in the camera's show method
             # For now, we'll just pass the parameters we know work
@@ -590,7 +627,7 @@ def browse(subpath):
             dirs.append(item)
         else:
             files.append(item)
-    
+
     # Build HTML page with improved styling and file management
     html = """<!doctype html>
     <html>
@@ -616,7 +653,7 @@ def browse(subpath):
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="/browse/">Root</a></li>
     """
-    
+
     # Add breadcrumbs for navigation
     path_parts = subpath.split(os.sep) if subpath else []
     path_so_far = ""
@@ -625,10 +662,12 @@ def browse(subpath):
             continue
         path_so_far = os.path.join(path_so_far, part)
         if i == len(path_parts) - 1:  # Last part is current directory
-            html += f'<li class="breadcrumb-item active" aria-current="page">{part}</li>'
+            html += (
+                f'<li class="breadcrumb-item active" aria-current="page">{part}</li>'
+            )
         else:
             html += f'<li class="breadcrumb-item"><a href="/browse/{path_so_far}">{part}</a></li>'
-    
+
     html += """
                     </ol>
                 </nav>
@@ -653,7 +692,7 @@ def browse(subpath):
                             </thead>
                             <tbody>
     """
-    
+
     # Add parent directory link if not at root
     if subpath:
         parent = os.path.dirname(subpath)
@@ -664,7 +703,7 @@ def browse(subpath):
                                     <td></td>
                                 </tr>
         """
-    
+
     # Add directories
     for d in sorted(dirs):
         new_subpath = os.path.join(subpath, d)
@@ -675,27 +714,27 @@ def browse(subpath):
                                     <td></td>
                                 </tr>
         """
-    
+
     # Add files with actions
     for f in sorted(files):
         new_path = os.path.join(subpath, f)
         file_ext = os.path.splitext(f)[1].lower()
-        
+
         actions = f'<div class="file-actions">'
-        
+
         # Different action based on file type
-        if file_ext in ['.png', '.jpg', '.jpeg', '.gif']:
+        if file_ext in [".png", ".jpg", ".jpeg", ".gif"]:
             # Image files - view in browser
             actions += f'<a href="/api/view/{new_path}" class="btn btn-sm btn-outline-info" target="_blank">View</a>'
             actions += f'<a href="/api/download/{new_path}" class="btn btn-sm btn-outline-secondary">Download</a>'
         else:
             # Other files - direct download
             actions += f'<a href="/api/download/{new_path}" class="btn btn-sm btn-outline-secondary">Download</a>'
-        
+
         # Add delete button for all files
         actions += f'<button class="btn btn-sm btn-outline-danger" onclick="deleteFile(\'{new_path}\')">Delete</button>'
-        actions += '</div>'
-        
+        actions += "</div>"
+
         html += f"""
                                 <tr>
                                     <td><span class="badge bg-secondary">FILE</span></td>
@@ -703,7 +742,7 @@ def browse(subpath):
                                     <td>{actions}</td>
                                 </tr>
         """
-    
+
     # Close the table and add JavaScript for delete functionality
     html += """
                             </tbody>
@@ -767,10 +806,10 @@ def browse(subpath):
     </body>
     </html>
     """
-    
+
     path_display = f"/{subpath}" if subpath else "/data"
     html = html.replace("{path_display}", path_display)
-    
+
     return html
 
 
@@ -786,13 +825,14 @@ class ViewFile(Resource):
         full_path = os.path.join(data_dir, filename)
         if not os.path.abspath(full_path).startswith(os.path.abspath(data_dir)):
             abort(403)  # Forbidden if trying to access outside /data
-        
+
         # Check file existence
         if not os.path.isfile(full_path):
             abort(404)  # Not found
-            
+
         # For image files, return without attachment headers
         return send_from_directory(data_dir, filename, as_attachment=False)
+
 
 @api.route("/download/<path:filename>")
 class Download(Resource):
@@ -806,9 +846,10 @@ class Download(Resource):
         full_path = os.path.join(data_dir, filename)
         if not os.path.abspath(full_path).startswith(os.path.abspath(data_dir)):
             abort(403)  # Forbidden if trying to access outside /data
-            
+
         return send_from_directory(data_dir, filename, as_attachment=True)
-        
+
+
 @api.route("/delete/<path:filename>")
 class DeleteFile(Resource):
     @api.param("filename", "The file path relative to the data directory")
@@ -822,17 +863,23 @@ class DeleteFile(Resource):
         # Check if the path is safe (within /data directory)
         full_path = os.path.join(data_dir, filename)
         if not os.path.abspath(full_path).startswith(os.path.abspath(data_dir)):
-            return {"status": "error", "message": "Cannot delete files outside data directory"}, 403
-        
+            return {
+                "status": "error",
+                "message": "Cannot delete files outside data directory",
+            }, 403
+
         # Check file existence
         if not os.path.isfile(full_path):
             return {"status": "error", "message": "File not found"}, 404
-            
+
         try:
             # Delete the file
             os.remove(full_path)
             app.logger.info(f"Deleted file: {full_path}")
-            return {"status": "success", "message": f"File {filename} deleted successfully"}, 200
+            return {
+                "status": "success",
+                "message": f"File {filename} deleted successfully",
+            }, 200
         except Exception as e:
             app.logger.error(f"Error deleting file {full_path}: {e}")
             return {"status": "error", "message": f"Error deleting file: {str(e)}"}, 500
@@ -918,21 +965,16 @@ class LogMessages(Resource):
     def get(self):
         """Retrieve the log messages."""
         with log_lock:
-            return {
-                "status": "success",
-                "logs": log_messages
-            }, 200
-    
+            return {"status": "success", "logs": log_messages}, 200
+
     @api.response(200, "Log messages cleared successfully")
     def delete(self):
         """Clear the log messages."""
         with log_lock:
             global log_messages
             log_messages = []
-            return {
-                "status": "success",
-                "message": "Log messages cleared"
-            }, 200
+            return {"status": "success", "message": "Log messages cleared"}, 200
+
 
 if __name__ == "__main__":
     # Add initial log message

@@ -11,6 +11,7 @@ from flask import (
 from flask_restx import Api, Resource, fields
 import threading
 import os
+import time
 from io import BytesIO
 import tempfile
 import holoviews as hv
@@ -212,6 +213,24 @@ collection_running = False
 capture_finished = False
 collection_lock = threading.Lock()
 
+# Log messages storage
+log_messages = []
+log_lock = threading.Lock()
+
+def add_log_message(message, message_type="info"):
+    """Add a message to the log with timestamp and type."""
+    with log_lock:
+        timestamp = int(time.time() * 1000)  # milliseconds since epoch
+        log_messages.append({
+            "timestamp": timestamp,
+            "time": time.strftime("%H:%M:%S"),
+            "message": message,
+            "type": message_type
+        })
+        # Keep only the last 100 messages
+        if len(log_messages) > 100:
+            log_messages.pop(0)
+
 
 def run_collection():
     global collection_running, capture_finished, capture_progress
@@ -221,7 +240,12 @@ def run_collection():
         capture_progress = {}
     try:
         # Pass the update_progress callback, which now receives the tqdm progress dict.
+        add_log_message("Collection process started", "info")
         cam.collect(progress_callback=update_progress)
+        add_log_message("Collection completed successfully", "success")
+    except Exception as e:
+        add_log_message(f"Error during collection: {str(e)}", "error")
+        app.logger.error(f"Collection error: {e}")
     finally:
         with collection_lock:
             collection_running = False
@@ -403,9 +427,17 @@ class UpdateSettings(Resource):
             with collection_lock:
                 global capture_finished
                 capture_finished = False
+            
+            # Add to log
+            if detailed_settings_provided:
+                add_log_message(f"Camera advanced settings updated", "success")
+            else:
+                add_log_message(f"Camera basic settings updated - exposure: {new_exposure}ms, lines: {new_settings['n_lines'] if new_settings['n_lines'] is not None else 'unchanged'}, processing: {new_pl}", "success")
+            
             return {"status": "success"}, 200
         except Exception as e:
             app.logger.error("Error updating settings: %s", e, exc_info=True)
+            add_log_message(f"Error updating camera settings: {str(e)}", "error")
             return {"status": "error", "error": f"Internal error: {e}"}, 500
 
 
@@ -417,9 +449,11 @@ class Capture(Resource):
         global collection_running
         with collection_lock:
             if collection_running:
+                add_log_message("Capture already in progress", "info")
                 return {"status": "Capture already in progress"}, 200
             thread = threading.Thread(target=run_collection)
             thread.start()
+        add_log_message("Image capture started", "info")
         return {"status": "Capture started"}, 200
 
 
@@ -434,12 +468,15 @@ class SaveFiles(Resource):
         save_dir = data.get("save_dir", "/data")
         try:
             cam.save(save_dir=save_dir)
+            filepath = f"{cam.directory}/{cam.timestamps[0].strftime('%Y_%m_%d-%H_%M_%S')}.nc"
+            add_log_message(f"Files saved to {save_dir}", "success")
             return {
                 "status": "success",
                 "message": f"Files saved to {save_dir}",
-                "filepath": f"{cam.directory}/{cam.timestamps[0].strftime('%Y_%m_%d-%H_%M_%S')}.nc",
+                "filepath": filepath,
             }, 200
         except Exception as e:
+            add_log_message(f"Error saving files: {str(e)}", "error")
             api.abort(500, str(e))
 
 
@@ -875,5 +912,29 @@ class FileList(Resource):
             return {"status": "error", "message": f"Error listing files: {str(e)}"}, 500
 
 
+@api.route("/logs")
+class LogMessages(Resource):
+    @api.response(200, "Log messages retrieved successfully")
+    def get(self):
+        """Retrieve the log messages."""
+        with log_lock:
+            return {
+                "status": "success",
+                "logs": log_messages
+            }, 200
+    
+    @api.response(200, "Log messages cleared successfully")
+    def delete(self):
+        """Clear the log messages."""
+        with log_lock:
+            global log_messages
+            log_messages = []
+            return {
+                "status": "success",
+                "message": "Log messages cleared"
+            }, 200
+
 if __name__ == "__main__":
+    # Add initial log message
+    add_log_message("Server started", "success")
     app.run(debug=False, threaded=True)

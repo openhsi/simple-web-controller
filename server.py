@@ -434,7 +434,11 @@ class SaveFiles(Resource):
         save_dir = data.get("save_dir", "/data")
         try:
             cam.save(save_dir=save_dir)
-            return {"status": "success", "message": f"Files saved to {save_dir}"}, 200
+            return {
+                "status": "success",
+                "message": f"Files saved to {save_dir}",
+                "filepath": f"{cam.directory}/{cam.timestamps[0].strftime('%Y_%m_%d-%H_%M_%S')}.nc",
+            }, 200
         except Exception as e:
             api.abort(500, str(e))
 
@@ -795,6 +799,80 @@ class DeleteFile(Resource):
         except Exception as e:
             app.logger.error(f"Error deleting file {full_path}: {e}")
             return {"status": "error", "message": f"Error deleting file: {str(e)}"}, 500
+
+
+@api.route("/file_list")
+class FileList(Resource):
+    @api.param(
+        "folder", "The folder path to list (relative to data directory)", required=False
+    )
+    @api.response(200, "File list retrieved successfully")
+    @api.response(403, "Forbidden - Cannot access directory outside data directory")
+    @api.response(404, "Directory not found")
+    def get(self):
+        """Get a list of all files in the specified directory."""
+        data_dir = "/data"
+        folder = request.args.get("folder", "")
+
+        # Build the target directory path
+        target_dir = os.path.join(data_dir, folder)
+
+        # Security check - ensure path is within data directory
+        if not os.path.abspath(target_dir).startswith(os.path.abspath(data_dir)):
+            return {
+                "status": "error",
+                "message": "Cannot access directory outside data directory",
+            }, 403
+
+        # Check if directory exists
+        if not os.path.isdir(target_dir):
+            return {"status": "error", "message": "Directory not found"}, 404
+
+        try:
+            # Get all items in the directory
+            items = os.listdir(target_dir)
+
+            # Separate files and directories
+            files = []
+            directories = []
+
+            for item in items:
+                item_path = os.path.join(target_dir, item)
+                if os.path.isdir(item_path):
+                    # For directories, add with trailing slash
+                    rel_path = os.path.relpath(item_path, data_dir)
+                    directories.append(
+                        {"name": item, "path": rel_path, "type": "directory"}
+                    )
+                else:
+                    # For files, include size and modification time
+                    file_stats = os.stat(item_path)
+                    rel_path = os.path.relpath(item_path, data_dir)
+
+                    # Get file extension
+                    _, ext = os.path.splitext(item)
+
+                    files.append(
+                        {
+                            "name": item,
+                            "path": rel_path,
+                            "type": "file",
+                            "size": file_stats.st_size,
+                            "modified": file_stats.st_mtime,
+                            "extension": ext.lower(),
+                        }
+                    )
+
+            # Return both files and directories
+            return {
+                "status": "success",
+                "current_dir": folder or "/",
+                "files": files,
+                "directories": directories,
+            }, 200
+
+        except Exception as e:
+            return {"status": "error", "message": f"Error listing files: {str(e)}"}, 500
 
 
 if __name__ == "__main__":

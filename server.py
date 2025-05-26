@@ -26,7 +26,7 @@ from openhsi.cameras import FlirCamera as openhsiCameraOrig
 # json_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_settings_Mono8_bin1.json"
 # cal_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_calibration_Mono8_bin1.nc"
 json_path = "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_settings_Mono8_bin1.json"
-json_path = "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_settings_Mono8_bin1.json"
+cal_path = "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_calibration_Mono8_bin1.nc"
 
 
 # reimplemnted openhsi capture to allow capture progress feedback.

@@ -1,0 +1,14 @@
+# Core dependencies
+flask>=2.0.0
+flask-restx>=1.0.0
+openhsi
+holoviews
+matplotlib
+tqdm
+pyyaml>=6.0
+
+# Development dependencies (optional)
+# pytest
+# black
+# flake8
+# mypy

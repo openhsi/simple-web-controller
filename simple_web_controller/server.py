@@ -17,16 +17,35 @@ import tempfile
 import holoviews as hv
 from tqdm import tqdm
 import matplotlib
+import yaml
+import argparse
 
 matplotlib.use("Agg")
 
 from openhsi.cameras import FlirCamera as openhsiCameraOrig
 
-# openhsi calibration settings
-# json_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_settings_Mono8_bin1.json"
-# cal_path = "/home/openhsi/UNE/cals/OpenHSI-SAIL-UNE-01/OpenHSI-SAIL-UNE-01_calibration_Mono8_bin1.nc"
-json_path = "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_settings_Mono8_bin1.json"
-cal_path = "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_calibration_Mono8_bin1.nc"
+
+def load_config(config_path="config.yaml"):
+    """Load configuration from YAML file."""
+    try:
+        with open(config_path, 'r') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Configuration file {config_path} not found")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing YAML file: {e}")
+
+
+# Configuration variables (will be set by CLI)
+config = None
+json_path = None
+cal_path = None
+default_camera_settings = None
+data_directory = None
+default_save_directory = None
+max_log_messages = 100
+server_debug = False
+server_threaded = True
 
 
 # reimplemnted openhsi capture to allow capture progress feedback.
@@ -49,14 +68,8 @@ class openhsiCamera(openhsiCameraOrig):
         self.stop_cam()
 
 
-# Initialize the camera at startup with explicit parameters.
-cam = openhsiCamera(
-    n_lines=512,
-    exposure_ms=10,
-    processing_lvl=-1,
-    json_path=json_path,
-    cal_path=cal_path,
-)
+# Camera will be initialized by CLI after config is loaded
+cam = None
 
 app = Flask(__name__)
 
@@ -253,8 +266,8 @@ def add_log_message(message, message_type="info"):
                 "type": message_type,
             }
         )
-        # Keep only the last 100 messages
-        if len(log_messages) > 100:
+        # Keep only the last N messages from config
+        if len(log_messages) > max_log_messages:
             log_messages.pop(0)
 
 
@@ -498,7 +511,7 @@ class SaveFiles(Resource):
     def post(self):
         """Save the captured files to a specified directory."""
         data = request.get_json()
-        save_dir = data.get("save_dir", "/data")
+        save_dir = data.get("save_dir", default_save_directory)
         try:
             cam.save(save_dir=save_dir)
             filepath = (
@@ -608,7 +621,7 @@ def browse(subpath):
       404:
         description: Not Found - The specified directory does not exist.
     """
-    base_dir = "/data"
+    base_dir = data_directory
     current_dir = os.path.join(base_dir, subpath)
     # Ensure the current_dir is within base_dir to prevent directory traversal
     if not os.path.abspath(current_dir).startswith(os.path.abspath(base_dir)):
@@ -807,7 +820,7 @@ def browse(subpath):
     </html>
     """
 
-    path_display = f"/{subpath}" if subpath else "/data"
+    path_display = f"/{subpath}" if subpath else data_directory
     html = html.replace("{path_display}", path_display)
 
     return html
@@ -820,11 +833,11 @@ class ViewFile(Resource):
     @api.response(404, "File not found")
     def get(self, filename):
         """View a file (especially images) in the browser without downloading."""
-        data_dir = "/data"
-        # Check if the path is safe (within /data directory)
+        data_dir = data_directory
+        # Check if the path is safe (within data directory)
         full_path = os.path.join(data_dir, filename)
         if not os.path.abspath(full_path).startswith(os.path.abspath(data_dir)):
-            abort(403)  # Forbidden if trying to access outside /data
+            abort(403)  # Forbidden if trying to access outside data directory
 
         # Check file existence
         if not os.path.isfile(full_path):
@@ -841,11 +854,11 @@ class Download(Resource):
     @api.response(404, "File not found")
     def get(self, filename):
         """Download a file from the data directory."""
-        data_dir = "/data"
-        # Check if the path is safe (within /data directory)
+        data_dir = data_directory
+        # Check if the path is safe (within data directory)
         full_path = os.path.join(data_dir, filename)
         if not os.path.abspath(full_path).startswith(os.path.abspath(data_dir)):
-            abort(403)  # Forbidden if trying to access outside /data
+            abort(403)  # Forbidden if trying to access outside data directory
 
         return send_from_directory(data_dir, filename, as_attachment=True)
 
@@ -859,7 +872,7 @@ class DeleteFile(Resource):
     @api.response(500, "Error occurred while deleting file")
     def delete(self, filename):
         """Delete a file from the data directory."""
-        data_dir = "/data"
+        data_dir = data_directory
         # Check if the path is safe (within /data directory)
         full_path = os.path.join(data_dir, filename)
         if not os.path.abspath(full_path).startswith(os.path.abspath(data_dir)):
@@ -895,7 +908,7 @@ class FileList(Resource):
     @api.response(404, "Directory not found")
     def get(self):
         """Get a list of all files in the specified directory."""
-        data_dir = "/data"
+        data_dir = data_directory
         folder = request.args.get("folder", "")
 
         # Build the target directory path
@@ -976,7 +989,5 @@ class LogMessages(Resource):
             return {"status": "success", "message": "Log messages cleared"}, 200
 
 
-if __name__ == "__main__":
-    # Add initial log message
-    add_log_message("Server started", "success")
-    app.run(debug=False, threaded=True)
+# This module can be imported as part of the package
+# The CLI entry point handles running the server

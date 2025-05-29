@@ -1,0 +1,26 @@
+# OpenHSI Flask Server Configuration
+
+# Camera calibration paths
+camera:
+  json_path: "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_settings_Mono8_bin1.json"
+  cal_path: "/home/openhsi/orlar/cals/OpenHSI-SAIL-orlar-01/OpenHSI-SAIL-orlar-01_calibration_Mono8_bin1.nc"
+  
+  # Default camera settings
+  default_settings:
+    n_lines: 512
+    exposure_ms: 10
+    processing_lvl: -1
+
+# File operations
+files:
+  data_directory: "/data"
+  default_save_directory: "/data"
+
+# Server settings
+server:
+  debug: false
+  threaded: true
+
+# Logging
+logging:
+  max_log_messages: 100

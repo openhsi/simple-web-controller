@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenHSI Flask Web Server
+After=network.target
+
+[Service]
+User=openhsi
+WorkingDirectory=/home/openhsi/orlar/simple-web-controller
+ExecStart=/home/openhsi/miniforge3/envs/openhsi/bin/python /home/openhsi/orlar/simple-web-controller/server.py
+Restart=always
+Environment=FLASK_ENV=production
+
+[Install]
+WantedBy=multi-user.target

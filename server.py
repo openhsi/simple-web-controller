@@ -17,6 +17,22 @@ import tempfile
 import holoviews as hv
 from tqdm import tqdm
 import matplotlib
+import subprocess
+import datetime
+import os
+import re
+def get_version():
+    """Get version from pyproject.toml"""
+    try:
+        with open('pyproject.toml', 'r') as f:
+            content = f.read()
+        match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', content)
+        return match.group(1) if match else "1.1.1"
+    except:
+        return "1.1.1"
+
+# Application version
+__version__ = get_version()
 
 matplotlib.use("Agg")
 
@@ -64,7 +80,7 @@ app = Flask(__name__)
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(
     api_bp,
-    version="1.1",
+    version=get_version(),
     title="OpenHSI  Capture API",
     description="API for managing OpenHSI capture and file operations",
     doc="/apidocs",
@@ -711,7 +727,11 @@ def browse(subpath):
                                 <tr>
                                     <td><span class="badge bg-primary">DIR</span></td>
                                     <td><a href="/browse/{new_subpath}">{d}</a></td>
-                                    <td></td>
+                                    <td>
+                                        <div class="file-actions">
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteFolder('{new_subpath}')">Delete</button>
+                                        </div>
+                                    </td>
                                 </tr>
         """
 
@@ -775,28 +795,48 @@ def browse(subpath):
     
     <script>
         let filePathToDelete = '';
+        let folderPathToDelete = '';
         const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
         
         function deleteFile(path) {
             filePathToDelete = path;
-            document.getElementById('fileToDelete').textContent = path;
+            folderPathToDelete = '';
+            document.getElementById('fileToDelete').textContent = 'File: ' + path;
+            deleteModal.show();
+        }
+        
+        function deleteFolder(path) {
+            folderPathToDelete = path;
+            filePathToDelete = '';
+            document.getElementById('fileToDelete').textContent = 'Folder: ' + path;
             deleteModal.show();
         }
         
         document.getElementById('confirmDelete').addEventListener('click', function() {
-            // Send API request to delete the file
-            fetch('/api/delete/' + filePathToDelete, { method: 'DELETE' })
-                .then(response => {
-                    if (response.ok) {
+            let apiUrl, itemType;
+            
+            if (filePathToDelete) {
+                apiUrl = '/api/delete/' + filePathToDelete;
+                itemType = 'file';
+            } else if (folderPathToDelete) {
+                apiUrl = '/api/delete_folder/' + folderPathToDelete;
+                itemType = 'folder';
+            }
+            
+            // Send API request to delete the file or folder
+            fetch(apiUrl, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
                         // Reload the page to update the file list
                         window.location.reload();
                     } else {
-                        alert('Error deleting file');
+                        alert('Error deleting ' + itemType + ': ' + data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error deleting file');
+                    alert('Error deleting ' + itemType);
                 })
                 .finally(() => {
                     deleteModal.hide();
@@ -883,6 +923,49 @@ class DeleteFile(Resource):
         except Exception as e:
             app.logger.error(f"Error deleting file {full_path}: {e}")
             return {"status": "error", "message": f"Error deleting file: {str(e)}"}, 500
+
+
+@api.route("/delete_folder/<path:foldername>")
+class DeleteFolder(Resource):
+    @api.param("foldername", "The folder path relative to the data directory")
+    @api.response(200, "Folder deleted successfully")
+    @api.response(403, "Forbidden - Cannot delete outside data directory")
+    @api.response(404, "Folder not found")
+    @api.response(400, "Cannot delete non-empty folder")
+    @api.response(500, "Error occurred while deleting folder")
+    def delete(self, foldername):
+        """Delete an empty folder from the data directory."""
+        data_dir = "/data"
+        # Check if the path is safe (within /data directory)
+        full_path = os.path.join(data_dir, foldername)
+        if not os.path.abspath(full_path).startswith(os.path.abspath(data_dir)):
+            return {
+                "status": "error",
+                "message": "Cannot delete folders outside data directory",
+            }, 403
+
+        # Check folder existence
+        if not os.path.isdir(full_path):
+            return {"status": "error", "message": "Folder not found"}, 404
+
+        try:
+            # Check if folder is empty
+            if os.listdir(full_path):
+                return {
+                    "status": "error", 
+                    "message": "Cannot delete non-empty folder. Please delete all contents first."
+                }, 400
+
+            # Delete the empty folder
+            os.rmdir(full_path)
+            app.logger.info(f"Deleted folder: {full_path}")
+            return {
+                "status": "success",
+                "message": f"Folder {foldername} deleted successfully",
+            }, 200
+        except Exception as e:
+            app.logger.error(f"Error deleting folder {full_path}: {e}")
+            return {"status": "error", "message": f"Error deleting folder: {str(e)}"}, 500
 
 
 @api.route("/file_list")
@@ -976,6 +1059,17 @@ class LogMessages(Resource):
             return {"status": "success", "message": "Log messages cleared"}, 200
 
 
+@api.route("/version")
+class GetVersion(Resource):
+    @api.response(200, "Version information retrieved successfully")
+    def get(self):
+        """Get application version and system information."""
+        return {
+            "status": "success",
+            "version": get_version(),
+            "application": "OpenHSI Web Controller",
+            "api_version": get_version()
+        }, 200
 if __name__ == "__main__":
     # Add initial log message
     add_log_message("Server started", "success")

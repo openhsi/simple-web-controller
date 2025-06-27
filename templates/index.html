@@ -45,7 +45,15 @@
 
 <body>
     <div class="container">
-        <h1>Camera Control Interface</h1>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0">Camera Control Interface</h1>
+            <div class="d-flex align-items-center gap-3">
+                <a href="/api/apidocs" target="_blank" class="btn btn-sm btn-outline-info">
+                    API Docs
+                </a>
+                <small class="text-muted" id="versionInfo">Loading...</small>
+            </div>
+        </div>
         <div id="statusBox">Idle</div>
 
         <!-- Tabbed interface -->
@@ -150,9 +158,19 @@
                         <button type="button" class="btn btn-info control mb-3" onclick="updateImageSettings()">Refresh
                             Image</button>
 
-                        <div>
+                        <div id="image_container" class="text-center">
                             <img id="capture_img" src="/api/show" alt="Captured image" class="img-fluid"
-                                style="max-width:100%;">
+                                style="max-width:100%; display: none;">
+                            <div id="image_placeholder" class="border rounded p-5 bg-light text-muted">
+                                <div class="mb-3">
+                                    <svg width="64" height="64" fill="currentColor" class="bi bi-camera" viewBox="0 0 16 16">
+                                        <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
+                                        <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                                    </svg>
+                                </div>
+                                <h5>No Image Available</h5>
+                                <p>Capture an image to see the preview here</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -374,6 +392,17 @@
                 });
         }
 
+        // Show/hide image placeholder
+        function showImagePlaceholder() {
+            document.getElementById("capture_img").style.display = "none";
+            document.getElementById("image_placeholder").style.display = "block";
+        }
+
+        function hideImagePlaceholder() {
+            document.getElementById("capture_img").style.display = "block";
+            document.getElementById("image_placeholder").style.display = "none";
+        }
+
         // Refresh displayed image with settings.
         function updateImageSettings() {
             // Get all the image display settings
@@ -391,8 +420,19 @@
                 t: new Date().getTime() // Cache buster
             });
 
+            const imgElement = document.getElementById("capture_img");
+            
+            // Set up load/error handlers
+            imgElement.onload = function() {
+                hideImagePlaceholder();
+            };
+            
+            imgElement.onerror = function() {
+                showImagePlaceholder();
+            };
+
             // Update the image source with the new parameters
-            document.getElementById("capture_img").src = "/api/show?" + params.toString();
+            imgElement.src = "/api/show?" + params.toString();
         }
 
         // Legacy function for backward compatibility
@@ -564,7 +604,30 @@
         // Initialize Bootstrap tabs
         var activeTabName = 'control'; // Default active tab is now control
 
+        // Function to fetch and display version information
+        function fetchVersionInfo() {
+            fetch('/api/version')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('versionInfo').textContent = 
+                            `${data.application} v${data.version}`;
+                    } else {
+                        document.getElementById('versionInfo').textContent = 'Version: Unknown';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching version:', error);
+                    document.getElementById('versionInfo').textContent = 'Version: Error';
+                });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
+            // Fetch version information
+            fetchVersionInfo();
+            
+            // Initialize image placeholder
+            showImagePlaceholder();
             // Initialize tab click handlers - using Bootstrap's built-in tab functionality
             document.querySelector('#settings-tab').addEventListener('shown.bs.tab', function () {
                 activeTabName = 'settings';

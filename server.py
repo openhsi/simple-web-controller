@@ -84,8 +84,10 @@ api = Api(
     title="OpenHSI  Capture API",
     description="API for managing OpenHSI capture and file operations",
     doc="/apidocs",
-    swagger_ui_parameters={"docExpansion": "full"},
+
 )  # Swagger UI will be at /api/apidocs
+
+app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 
 # Register the blueprint with the main Flask app.
 app.register_blueprint(api_bp)

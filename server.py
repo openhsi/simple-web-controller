@@ -106,6 +106,18 @@ settings_model = api.model(
     },
 )
 
+# Model for time setting
+time_model = api.model(
+    "TimeSettings",
+    {
+        "datetime": fields.String(
+            required=True, 
+            description="Date and time in ISO format (YYYY-MM-DDTHH:MM:SS)", 
+            example="2024-01-01T12:00:00"
+        ),
+    },
+)
+
 # Model for advanced camera settings
 advanced_settings_model = api.model(
     "AdvancedSettings",
@@ -1070,6 +1082,84 @@ class GetVersion(Resource):
             "application": "OpenHSI Web Controller",
             "api_version": get_version()
         }, 200
+
+
+@api.route("/time")
+class SystemTime(Resource):
+    @api.response(200, "Current system time retrieved successfully")
+    def get(self):
+        """Get current system time."""
+        try:
+            current_time = datetime.datetime.now()
+            return {
+                "status": "success",
+                "datetime": current_time.isoformat(),
+                "timezone": str(current_time.astimezone().tzinfo),
+            }, 200
+        except Exception as e:
+            app.logger.error(f"Error getting system time: {e}")
+            return {"status": "error", "error": f"Failed to get system time: {str(e)}"}, 500
+
+    @api.expect(time_model, validate=True)
+    @api.response(200, "System time updated successfully")
+    @api.response(400, "Invalid datetime format")
+    @api.response(500, "Failed to set system time")
+    def post(self):
+        """Set system time."""
+        data = request.get_json()
+        datetime_str = data.get("datetime")
+        
+        try:
+            # Parse the datetime string
+            dt = datetime.datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+            
+            # Format for the date command (YYYY-MM-DD HH:MM:SS)
+            formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Use sudo to set the system time
+            # Note: This requires the user running the Flask app to have sudo privileges for date command
+            result = subprocess.run(
+                ["sudo", "date", "-s", formatted_time],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode == 0:
+                add_log_message(f"System time updated to {formatted_time}", "success")
+                return {
+                    "status": "success",
+                    "message": f"System time updated to {formatted_time}",
+                    "datetime": dt.isoformat(),
+                }, 200
+            else:
+                error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                app.logger.error(f"Failed to set system time: {error_msg}")
+                add_log_message(f"Failed to set system time: {error_msg}", "error")
+                return {
+                    "status": "error",
+                    "error": f"Failed to set system time: {error_msg}",
+                }, 500
+                
+        except ValueError as e:
+            app.logger.error(f"Invalid datetime format: {e}")
+            return {
+                "status": "error",
+                "error": f"Invalid datetime format: {str(e)}",
+            }, 400
+        except subprocess.TimeoutExpired:
+            app.logger.error("Timeout while setting system time")
+            return {
+                "status": "error",
+                "error": "Timeout while setting system time",
+            }, 500
+        except Exception as e:
+            app.logger.error(f"Error setting system time: {e}")
+            add_log_message(f"Error setting system time: {str(e)}", "error")
+            return {
+                "status": "error",
+                "error": f"Internal error: {str(e)}",
+            }, 500
 if __name__ == "__main__":
     # Add initial log message
     add_log_message("Server started", "success")

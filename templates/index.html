@@ -163,9 +163,12 @@
                                 style="max-width:100%; display: none;">
                             <div id="image_placeholder" class="border rounded p-5 bg-light text-muted">
                                 <div class="mb-3">
-                                    <svg width="64" height="64" fill="currentColor" class="bi bi-camera" viewBox="0 0 16 16">
-                                        <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
-                                        <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                                    <svg width="64" height="64" fill="currentColor" class="bi bi-camera"
+                                        viewBox="0 0 16 16">
+                                        <path
+                                            d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z" />
+                                        <path
+                                            d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" />
                                     </svg>
                                 </div>
                                 <h5>No Image Available</h5>
@@ -184,6 +187,40 @@
                     <button type="button" class="btn btn-primary control" onclick="updateSettings()">Update
                         Settings</button>
                 </form>
+
+                <hr class="my-4">
+
+                <h3>System Time Settings</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="currentTime">Current System Time:</label>
+                                    <input type="text" id="currentTime" class="form-control" readonly>
+                                </div>
+                                <button type="button" class="btn btn-info btn-sm" onclick="refreshCurrentTime()">
+                                    Refresh Time
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="newDateTime">Set New Date & Time:</label>
+                                    <input type="datetime-local" id="newDateTime" class="form-control">
+                                </div>
+                                <button type="button" class="btn btn-warning control" onclick="setSystemTime()">
+                                    Set System Time
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <strong>Note:</strong> Setting system time requires administrator privileges.
+                                The server must be configured with appropriate sudo permissions.
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Detailed Settings Tab -->
@@ -421,13 +458,13 @@
             });
 
             const imgElement = document.getElementById("capture_img");
-            
+
             // Set up load/error handlers
-            imgElement.onload = function() {
+            imgElement.onload = function () {
                 hideImagePlaceholder();
             };
-            
-            imgElement.onerror = function() {
+
+            imgElement.onerror = function () {
                 showImagePlaceholder();
             };
 
@@ -543,19 +580,19 @@
                     if (data.status === 'success') {
                         const messageLog = document.getElementById('messageLog');
                         messageLog.innerHTML = ''; // Clear current logs
-                        
+
                         // Add each log message to the display
                         data.logs.forEach(log => {
                             const cssClass = log.type === 'error' ? 'text-danger' :
                                 log.type === 'success' ? 'text-success' : 'text-primary';
-                            
+
                             const messageElement = document.createElement('div');
                             messageElement.className = cssClass;
                             messageElement.innerHTML = `<small>${log.time}</small> ${log.message}`;
-                            
+
                             messageLog.appendChild(messageElement);
                         });
-                        
+
                         // Auto-scroll to the bottom
                         messageLog.scrollTop = messageLog.scrollHeight;
                     }
@@ -596,9 +633,71 @@
             if (logType) {
                 // Still call local logMessage for immediate display
                 logMessage(message, logType);
-                
+
                 // But no need to call API to add message as the server will do this for status updates
             }
+        }
+
+        // Time setting functions
+        function refreshCurrentTime() {
+            fetch('/api/time')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Format the datetime for display
+                        const dt = new Date(data.datetime);
+                        const formatted = dt.toLocaleString();
+                        document.getElementById('currentTime').value = formatted;
+
+                        // Also set the datetime-local input to current time
+                        const localDateTime = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                        document.getElementById('newDateTime').value = localDateTime;
+                    } else {
+                        console.error('Error getting current time:', data.error);
+                        document.getElementById('currentTime').value = 'Error getting time';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching current time:', error);
+                    document.getElementById('currentTime').value = 'Error fetching time';
+                });
+        }
+
+        function setSystemTime() {
+            const newDateTime = document.getElementById('newDateTime').value;
+
+            if (!newDateTime) {
+                updateStatusBox('Please select a date and time', 'error');
+                return;
+            }
+
+            setControlsEnabled(false);
+            updateStatusBox('Setting system time...', 'info');
+
+            // Convert datetime-local to ISO format
+            const isoDateTime = new Date(newDateTime).toISOString();
+
+            fetch('/api/time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datetime: isoDateTime })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateStatusBox(data.message, 'success');
+                        // Refresh the current time display
+                        refreshCurrentTime();
+                    } else {
+                        updateStatusBox('Error setting time: ' + data.error, 'error');
+                    }
+                    setControlsEnabled(true);
+                })
+                .catch(error => {
+                    console.error('Error setting system time:', error);
+                    updateStatusBox('Error setting system time: ' + error.message, 'error');
+                    setControlsEnabled(true);
+                });
         }
 
         // Initialize Bootstrap tabs
@@ -610,7 +709,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        document.getElementById('versionInfo').textContent = 
+                        document.getElementById('versionInfo').textContent =
                             `${data.application} v${data.version}`;
                     } else {
                         document.getElementById('versionInfo').textContent = 'Version: Unknown';
@@ -625,12 +724,14 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Fetch version information
             fetchVersionInfo();
-            
+
             // Initialize image placeholder
             showImagePlaceholder();
             // Initialize tab click handlers - using Bootstrap's built-in tab functionality
             document.querySelector('#settings-tab').addEventListener('shown.bs.tab', function () {
                 activeTabName = 'settings';
+                // Refresh current time when switching to settings tab
+                refreshCurrentTime();
             });
 
             document.querySelector('#detailed-tab').addEventListener('shown.bs.tab', function () {
@@ -645,7 +746,7 @@
 
             document.querySelector('#log-tab').addEventListener('shown.bs.tab', function () {
                 activeTabName = 'log';
-                
+
                 // Fetch the latest logs when switching to the log tab
                 fetchLogs();
 
@@ -663,9 +764,9 @@
 
             // Load logs when page loads
             fetchLogs();
-            
+
             // Set up periodic log refresh (every 10 seconds)
-            setInterval(function() {
+            setInterval(function () {
                 if (activeTabName === 'log') {
                     fetchLogs();
                 }

@@ -24,12 +24,16 @@ import re
 def get_version():
     """Get version from pyproject.toml"""
     try:
-        with open('pyproject.toml', 'r') as f:
+        # Get the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        pyproject_path = os.path.join(script_dir, 'pyproject.toml')
+        
+        with open(pyproject_path, 'r') as f:
             content = f.read()
         match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', content)
-        return match.group(1) if match else "1.1.1"
+        return match.group(1) if match else "error"
     except:
-        return "1.1.1"
+        return "error"  # Fixed: was returning undefined 'match' variable
 
 # Application version
 __version__ = get_version()

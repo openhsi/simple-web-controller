@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openhsi-web-controller"
+version = "1.2.0"
+description = "Flask-based web controller for OpenHSI cameras"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "OpenHSI Team"}
+]
+keywords = ["openhsi", "camera", "web", "controller", "flask"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "flask",
+    "flask-restx",
+    "openhsi",
+    "holoviews",
+    "matplotlib",
+    "tqdm"
+]
+
+[project.urls]
+Homepage = "https://github.com/openhsi/simple-web-controller"
+Repository = "https://github.com/openhsi/simple-web-controller"
+Documentation = "https://github.com/openhsi/simple-web-controller#readme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
+exclude = ["tests*"]

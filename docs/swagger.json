@@ -1,0 +1,503 @@
+{
+    "swagger": "2.0",
+    "basePath": "/api",
+    "paths": {
+        "/capture": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Capture started or already in progress"
+                    }
+                },
+                "summary": "Start the image capture process",
+                "operationId": "post_capture",
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/delete/{filename}": {
+            "parameters": [
+                {
+                    "name": "filename",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "delete": {
+                "responses": {
+                    "500": {
+                        "description": "Error occurred while deleting file"
+                    },
+                    "404": {
+                        "description": "File not found"
+                    },
+                    "403": {
+                        "description": "Forbidden - Cannot delete outside data directory"
+                    },
+                    "200": {
+                        "description": "File deleted successfully"
+                    }
+                },
+                "summary": "Delete a file from the data directory",
+                "operationId": "delete_delete_file",
+                "parameters": [
+                    {
+                        "name": "filename",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "description": "The file path relative to the data directory"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/download/{filename}": {
+            "parameters": [
+                {
+                    "name": "filename",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "404": {
+                        "description": "File not found"
+                    },
+                    "200": {
+                        "description": "File sent as attachment"
+                    }
+                },
+                "summary": "Download a file from the data directory",
+                "operationId": "get_download",
+                "parameters": [
+                    {
+                        "name": "filename",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "description": "The file path relative to the data directory"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/file_list": {
+            "get": {
+                "responses": {
+                    "404": {
+                        "description": "Directory not found"
+                    },
+                    "403": {
+                        "description": "Forbidden - Cannot access directory outside data directory"
+                    },
+                    "200": {
+                        "description": "File list retrieved successfully"
+                    }
+                },
+                "summary": "Get a list of all files in the specified directory",
+                "operationId": "get_file_list",
+                "parameters": [
+                    {
+                        "required": false,
+                        "in": "query",
+                        "description": "The folder path to list (relative to data directory)",
+                        "name": "folder",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/logs": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Log messages retrieved successfully"
+                    }
+                },
+                "summary": "Retrieve the log messages",
+                "operationId": "get_log_messages",
+                "tags": [
+                    "default"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Log messages cleared successfully"
+                    }
+                },
+                "summary": "Clear the log messages",
+                "operationId": "delete_log_messages",
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/save": {
+            "post": {
+                "responses": {
+                    "500": {
+                        "description": "Error occurred while saving files"
+                    },
+                    "200": {
+                        "description": "Files saved successfully"
+                    }
+                },
+                "summary": "Save the captured files to a specified directory",
+                "operationId": "post_save_files",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/Save"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/show": {
+            "get": {
+                "responses": {
+                    "204": {
+                        "description": "No Content \u2013 capture not finished or image generation error"
+                    },
+                    "200": {
+                        "description": "Image retrieved successfully"
+                    }
+                },
+                "summary": "Retrieve the captured image as a PNG file with display options",
+                "operationId": "get_show_image",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "in": "query",
+                        "description": "Contrast stretch percentage",
+                        "name": "stretch"
+                    },
+                    {
+                        "type": "string",
+                        "in": "query",
+                        "description": "Band to display (rgb, red, green, blue, nir)",
+                        "name": "band"
+                    },
+                    {
+                        "type": "boolean",
+                        "in": "query",
+                        "description": "Apply robust contrast stretching",
+                        "name": "robust"
+                    },
+                    {
+                        "type": "boolean",
+                        "in": "query",
+                        "description": "Apply histogram equalization",
+                        "name": "hist_eq"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/status": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Status retrieved successfully"
+                    }
+                },
+                "summary": "Retrieve the current capture status along with progress details",
+                "operationId": "get_status",
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/update_settings": {
+            "post": {
+                "responses": {
+                    "500": {
+                        "description": "Internal error while updating settings"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    },
+                    "200": {
+                        "description": "Settings updated successfully"
+                    }
+                },
+                "summary": "Update camera settings (both basic and advanced)",
+                "description": "This endpoint handles both the basic settings (n_lines, exposure_ms, processing_lvl)\nand the advanced detailed settings for the camera.\n\nAdvanced settings include:\n- row_slice: Range of rows to read from detector [start, end]\n- resolution: Image resolution [height, width]\n- fwhm_nm: Full Width at Half Maximum (spectral resolution) in nanometers\n- exposure_ms: Exposure time in milliseconds\n- luminance: Luminance value for calibration\n- binxy: Binning factors [x, y]\n- win_offset: Window offset [x, y]\n- win_resolution: Window resolution [width, height]\n- pixel_format: Pixel format (Mono8, Mono12, or Mono16)",
+                "operationId": "post_update_settings",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/FullSettings"
+                        }
+                    },
+                    {
+                        "description": "Number of scan lines to capture",
+                        "name": "n_lines",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Exposure time in milliseconds",
+                        "name": "exposure_ms",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Processing level (-1 to 4)",
+                        "name": "processing_lvl",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Range of rows to read from detector [start, end]",
+                        "name": "row_slice",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Image resolution [height, width]",
+                        "name": "resolution",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Full Width at Half Maximum (spectral resolution) in nanometers",
+                        "name": "fwhm_nm",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Luminance value for calibration",
+                        "name": "luminance",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Binning factors [x, y]",
+                        "name": "binxy",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Window offset [x, y]",
+                        "name": "win_offset",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Window resolution [width, height]",
+                        "name": "win_resolution",
+                        "type": "string",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Pixel format (Mono8, Mono12, or Mono16)",
+                        "name": "pixel_format",
+                        "type": "string",
+                        "in": "query"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/view/{filename}": {
+            "parameters": [
+                {
+                    "name": "filename",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "404": {
+                        "description": "File not found"
+                    },
+                    "200": {
+                        "description": "File sent for viewing"
+                    }
+                },
+                "summary": "View a file (especially images) in the browser without downloading",
+                "operationId": "get_view_file",
+                "parameters": [
+                    {
+                        "name": "filename",
+                        "in": "query",
+                        "required": true,
+                        "type": "string",
+                        "description": "The file path relative to the data directory"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "OpenHSI  Capture API",
+        "version": "1.1",
+        "description": "API for managing OpenHSI capture and file operations"
+    },
+    "produces": [
+        "application/json"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "default",
+            "description": "Default namespace"
+        }
+    ],
+    "definitions": {
+        "FullSettings": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/Settings"
+                },
+                {
+                    "properties": {
+                        "row_slice": {
+                            "type": "array",
+                            "description": "Range of rows to read from detector [start, end]",
+                            "example": [
+                                8,
+                                913
+                            ],
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "resolution": {
+                            "type": "array",
+                            "description": "Image resolution [height, width]",
+                            "example": [
+                                924,
+                                1240
+                            ],
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "fwhm_nm": {
+                            "type": "number",
+                            "description": "Full Width at Half Maximum (spectral resolution) in nanometers",
+                            "example": 4.0
+                        },
+                        "luminance": {
+                            "type": "number",
+                            "description": "Luminance value for calibration",
+                            "example": 10000
+                        },
+                        "binxy": {
+                            "type": "array",
+                            "description": "Binning factors [x, y]",
+                            "example": [
+                                1,
+                                1
+                            ],
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "win_offset": {
+                            "type": "array",
+                            "description": "Window offset [x, y]",
+                            "example": [
+                                96,
+                                200
+                            ],
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "win_resolution": {
+                            "type": "array",
+                            "description": "Window resolution [width, height]",
+                            "example": [
+                                924,
+                                1240
+                            ],
+                            "items": {
+                                "type": "integer"
+                            }
+                        },
+                        "pixel_format": {
+                            "type": "string",
+                            "description": "Pixel format (Mono8, Mono12, or Mono16)",
+                            "example": "Mono8"
+                        }
+                    },
+                    "type": "object"
+                }
+            ]
+        },
+        "Settings": {
+            "properties": {
+                "n_lines": {
+                    "type": "integer",
+                    "description": "Number of lines",
+                    "example": 512
+                },
+                "exposure_ms": {
+                    "type": "number",
+                    "description": "Exposure time in milliseconds",
+                    "example": 10.0
+                },
+                "processing_lvl": {
+                    "type": "integer",
+                    "description": "Processing level",
+                    "example": -1
+                }
+            },
+            "type": "object"
+        },
+        "Save": {
+            "properties": {
+                "save_dir": {
+                    "type": "string",
+                    "description": "Directory where files will be saved",
+                    "example": "/data"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "responses": {
+        "ParseError": {
+            "description": "When a mask can't be parsed"
+        },
+        "MaskError": {
+            "description": "When any error occurs on mask"
+        }
+    }
+}

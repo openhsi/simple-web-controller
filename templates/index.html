@@ -5,6 +5,7 @@
     <title>Camera Control Interface</title>
     <!-- Use local Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <style>
         body {
             padding-top: 20px;
@@ -27,47 +28,254 @@
         .control {
             margin-top: 10px;
         }
+
+        .tab-content {
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .nav-tabs {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Camera Control Interface</h1>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0">Camera Control Interface</h1>
+            <div class="d-flex align-items-center gap-3">
+                <a href="/api/apidocs" target="_blank" class="btn btn-sm btn-outline-info">
+                    API Docs
+                </a>
+                <small class="text-muted" id="versionInfo">Loading...</small>
+            </div>
+        </div>
         <div id="statusBox">Idle</div>
 
-        <!-- Camera Settings Section -->
-        <div class="mt-4">
-            <h2>Camera Settings</h2>
-            <form id="settingsForm">
-                {{ form_fields | safe }}
-                <button type="button" class="btn btn-primary control" onclick="updateSettings()">Update
-                    Settings</button>
-                <button type="button" class="btn btn-success control btn-block" onclick="takeImage()">Capture
-                    Image</button>
-            </form>
-        </div>
-        <!-- Row with Save, Capture, and Browse controls -->
-        <div class="mt-4">
-            <div class="row">
-                <div class="col">
-                    <div class="form-group">
-                        <label for="save_dir">Save Directory:</label>
-                        <input type="text" id="save_dir" value="data" class="form-control setting">
+        <!-- Tabbed interface -->
+        <ul class="nav nav-tabs mt-4" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="control-tab" data-bs-toggle="tab" data-bs-target="#control"
+                    type="button" role="tab" aria-controls="control" aria-selected="true">Control</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button"
+                    role="tab" aria-controls="settings" aria-selected="false">Basic Settings</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="detailed-tab" data-bs-toggle="tab" data-bs-target="#detailed" type="button"
+                    role="tab" aria-controls="detailed" aria-selected="false">Advanced Settings</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="log-tab" data-bs-toggle="tab" data-bs-target="#log" type="button"
+                    role="tab" aria-controls="log" aria-selected="false">Log</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Control Tab -->
+            <div class="tab-pane fade show active" id="control" role="tabpanel" aria-labelledby="control-tab">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h3>Capture Controls</h3>
+                        <button type="button" class="btn btn-success control btn-block w-100 mb-3"
+                            onclick="takeImage()">
+                            Capture Image
+                        </button>
+
+                        <div class="form-group mt-4">
+                            <label for="save_dir">Save Directory:</label>
+                            <input type="text" id="save_dir" value="/data" class="form-control setting">
+                        </div>
+                        <button type="button" class="btn btn-warning control btn-block w-100 mt-2"
+                            onclick="saveFiles()">
+                            Save Files
+                        </button>
+                        <a href="/browse" class="btn btn-secondary btn-block w-100 mt-2 control">Browse Files</a>
                     </div>
-                    <button type="button" class="btn btn-warning control btn-block" onclick="saveFiles()">Save
-                        Files</button>
-                    <a href="/browse" class="btn btn-secondary btn-block control">Browse Files</a>
+
+                    <div class="col-md-6">
+                        <h3>Image Preview</h3>
+
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                Display Settings
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="histEqCheck"
+                                                onchange="updateImageSettings()">
+                                            <label class="form-check-label" for="histEqCheck">Histogram
+                                                Equalization</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="robustCheck" checked
+                                                onchange="updateImageSettings()">
+                                            <label class="form-check-label" for="robustCheck">Robust Contrast</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="bandSelect">Display Band:</label>
+                                            <select class="form-control" id="bandSelect"
+                                                onchange="updateImageSettings()">
+                                                <option value="rgb">RGB Composite</option>
+                                                <option value="red">Red Band</option>
+                                                <option value="green">Green Band</option>
+                                                <option value="blue">Blue Band</option>
+                                                <option value="nir">NIR Band</option>
+                                            </select>
+                                        </div>
+                                    </div> -->
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="stretchRange">Contrast Stretch:</label>
+                                            <select class="form-control" id="stretchRange"
+                                                onchange="updateImageSettings()">
+                                                <option value="0">Default</option>
+                                                <option value="1">Low (1%)</option>
+                                                <option value="2">Medium (2%)</option>
+                                                <option value="5">High (5%)</option>
+                                                <option value="10">Very High (10%)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-info control mb-3" onclick="updateImageSettings()">Refresh
+                            Image</button>
+
+                        <div id="image_container" class="text-center">
+                            <img id="capture_img" src="/api/show" alt="Captured image" class="img-fluid"
+                                style="max-width:100%; display: none;">
+                            <div id="image_placeholder" class="border rounded p-5 bg-light text-muted">
+                                <div class="mb-3">
+                                    <svg width="64" height="64" fill="currentColor" class="bi bi-camera"
+                                        viewBox="0 0 16 16">
+                                        <path
+                                            d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z" />
+                                        <path
+                                            d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" />
+                                    </svg>
+                                </div>
+                                <h5>No Image Available</h5>
+                                <p>Capture an image to see the preview here</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <!-- Show Image Section (at bottom) -->
-        <div class="mt-4">
-            <h2>Show Image</h2>
-            <div>
-                <button type="button" class="btn btn-info control mt-2" onclick="showImage()">Refresh Image</button>
+
+            <!-- Basic Settings Tab -->
+            <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+                <h3 class="mt-3">Basic Camera Settings</h3>
+                <form id="settingsForm">
+                    {{ form_fields | safe }}
+                    <button type="button" class="btn btn-primary control" onclick="updateSettings()">Update
+                        Settings</button>
+                </form>
+
+                <hr class="my-4">
+
+                <h3>System Time Settings</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="currentTime">Current System Time:</label>
+                                    <input type="text" id="currentTime" class="form-control" readonly>
+                                </div>
+                                <button type="button" class="btn btn-info btn-sm" onclick="refreshCurrentTime()">
+                                    Refresh Time
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="newDateTime">Set New Date & Time:</label>
+                                    <input type="datetime-local" id="newDateTime" class="form-control">
+                                </div>
+                                <button type="button" class="btn btn-warning control" onclick="setSystemTime()">
+                                    Set System Time
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <strong>Note:</strong> Setting system time requires administrator privileges.
+                                The server must be configured with appropriate sudo permissions.
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="row">
-                <img id="capture_img" src="/show" alt="Captured image" class="img-fluid" style="max-width:500px;">
+
+            <!-- Detailed Settings Tab -->
+            <div class="tab-pane fade" id="detailed" role="tabpanel" aria-labelledby="detailed-tab">
+                <h3 class="mt-3">Advanced Camera Settings</h3>
+                <p class="text-muted">These settings require deeper knowledge of the camera and may require camera
+                    restart to take effect.</p>
+                <form id="detailedSettingsForm">
+                    {% for key, info in detailed_settings.items() %}
+                    <div class="form-group mb-3">
+                        <label for="{{ key }}">{{ key }}:</label>
+                        <div class="input-group">
+                            {% if info.type == 'array_int' %}
+                            {% for i in range(info.size) %}
+                            <input type="number" class="form-control detailed-setting" name="{{ key }}_{{ i }}"
+                                data-setting="{{ key }}" data-index="{{ i }}" data-type="{{ info.type }}"
+                                min="{{ info.min_value }}" max="{{ info.max_value }}"
+                                value="{{ current_settings[key][i] if current_settings[key] is iterable and i < current_settings[key]|length else 0 }}">
+                            {% if not loop.last %}<span class="input-group-text">,</span>{% endif %}
+                            {% endfor %}
+                            {% elif info.type == 'float' %}
+                            <input type="number" class="form-control detailed-setting" name="{{ key }}"
+                                data-setting="{{ key }}" data-type="{{ info.type }}" min="{{ info.min_value }}"
+                                max="{{ info.max_value }}" step="0.1" value="{{ current_settings[key] }}">
+                            {% elif info.type == 'select' %}
+                            <select class="form-control detailed-setting" name="{{ key }}" data-setting="{{ key }}"
+                                data-type="{{ info.type }}">
+                                {% for option in info.options %}
+                                <option value="{{ option }}" {% if current_settings[key]==option %}selected{% endif %}>
+                                    {{ option }}</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                        </div>
+                        <small class="form-text text-muted">{{ info.description }}</small>
+                    </div>
+                    {% endfor %}
+                    <button type="button" class="btn btn-primary control" onclick="updateDetailedSettings()">Update
+                        Advanced Settings</button>
+                </form>
+            </div>
+
+            <!-- Log Tab -->
+            <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
+                <div class="mt-3">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">Message Log</h3>
+                            <button class="btn btn-outline-secondary" onclick="clearMessageLog()">Clear Log</button>
+                        </div>
+                        <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                            <div id="messageLog" class=""></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -80,32 +288,48 @@
             });
         }
 
-        // Update camera settings via AJAX.
+        // Update camera settings via AJAX with type conversion.
         function updateSettings() {
             setControlsEnabled(false);
-            document.getElementById("statusBox").textContent = "Updating settings...";
+            updateStatusBox("Updating settings...");
             var settings = {};
             var inputs = document.querySelectorAll("input.setting, select.setting");
             inputs.forEach(function (input) {
-                settings[input.name] = input.value;
+                var value = input.value.trim();
+                // Convert the values to number based on field name.
+                if (value !== "") {
+                    if (input.name === "exposure_ms") {
+                        settings[input.name] = parseFloat(value);
+                    } else if (input.name === "n_lines" || input.name === "processing_lvl") {
+                        settings[input.name] = parseInt(value, 10);
+                    } else {
+                        settings[input.name] = value;
+                    }
+                }
             });
-            fetch("/update_settings", {
+            console.log("Sending settings:", settings);
+            fetch("/api/update_settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.status === "success") {
-                        document.getElementById("statusBox").textContent = "Settings updated successfully!";
+                        updateStatusBox("Settings updated successfully!", "success");
                     } else {
-                        document.getElementById("statusBox").textContent = "Error updating settings: " + data.error;
+                        updateStatusBox("Error updating settings: " + data.error, "error");
                     }
                     setControlsEnabled(true);
                 })
                 .catch(error => {
                     console.error("Error updating settings:", error);
-                    document.getElementById("statusBox").textContent = "Error updating settings.";
+                    updateStatusBox("Error updating settings: " + error.message, "error");
                     setControlsEnabled(true);
                 });
         }
@@ -113,15 +337,15 @@
         // Capture image via AJAX.
         function takeImage() {
             setControlsEnabled(false);
-            document.getElementById("statusBox").textContent = "Starting capture...";
-            fetch("/capture", { method: "POST" })
+            updateStatusBox("Starting capture...", "info");
+            fetch("/api/capture", { method: "POST" })
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById("statusBox").textContent = data.status;
+                    updateStatusBox(data.status, "info");
                 })
                 .catch(error => {
                     console.error("Error capturing image:", error);
-                    document.getElementById("statusBox").textContent = "Error capturing image.";
+                    updateStatusBox("Error capturing image.", "error");
                     setControlsEnabled(true);
                 });
         }
@@ -129,9 +353,9 @@
         // Save files via AJAX.
         function saveFiles() {
             setControlsEnabled(false);
-            document.getElementById("statusBox").textContent = "Saving files...";
+            updateStatusBox("Saving files...", "info");
             var saveDir = document.getElementById("save_dir").value;
-            fetch("/save", {
+            fetch("/api/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ "save_dir": saveDir })
@@ -139,44 +363,417 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === "success") {
-                        document.getElementById("statusBox").textContent = data.message;
+                        updateStatusBox(data.message, "success");
                     } else {
-                        document.getElementById("statusBox").textContent = "Error saving files: " + data.error;
+                        updateStatusBox("Error saving files: " + data.error, "error");
                     }
                     setControlsEnabled(true);
                 })
                 .catch(error => {
                     console.error("Error saving files:", error);
-                    document.getElementById("statusBox").textContent = "Error saving files.";
+                    updateStatusBox("Error saving files.", "error");
                     setControlsEnabled(true);
                 });
         }
 
+        // Track whether we've already shown the image after capture
+        var captureJustFinished = false;
+
         // Poll capture status every second and update the status box.
         function checkStatus() {
-            fetch("/status")
+            fetch("/api/status")
                 .then(response => response.json())
                 .then(data => {
-                    var statusBox = document.getElementById("statusBox");
                     if (data.capturing) {
-                        statusBox.textContent = "Collecting image...";
+                        captureJustFinished = false;
+                        // If progress info is available, render it.
+                        if (data.progress && data.progress.total) {
+                            var percentage = data.progress.percentage.toFixed(1);
+                            var current = data.progress.current;
+                            var total = data.progress.total;
+                            var elapsed = data.progress.elapsed.toFixed(1);
+                            var rate = data.progress.rate ? data.progress.rate.toFixed(1) : "N/A";
+                            document.getElementById("statusBox").innerHTML = "Collecting image... " + percentage + "% (" + current + "/" + total + ")<br>" +
+                                "Elapsed: " + elapsed + " s, Rate: " + rate + " lines/s";
+
+                            // Log progress at 25%, 50%, 75%, and 100% points
+                            if (percentage >= 25 && !window.logged25 && percentage < 50) {
+                                logMessage("Capture 25% complete", "info");
+                                window.logged25 = true;
+                            } else if (percentage >= 50 && !window.logged50 && percentage < 75) {
+                                logMessage("Capture 50% complete", "info");
+                                window.logged50 = true;
+                            } else if (percentage >= 75 && !window.logged75 && percentage < 100) {
+                                logMessage("Capture 75% complete", "info");
+                                window.logged75 = true;
+                            }
+                        } else {
+                            document.getElementById("statusBox").textContent = "Collecting image...";
+                        }
                         setControlsEnabled(false);
-                    } else if (data.finished) {
-                        statusBox.textContent = "Capture finished!";
+                    } else if (data.finished && !captureJustFinished) {
+                        updateStatusBox("Capture finished!", "success");
                         setControlsEnabled(true);
+                        // Automatically refresh the image when capture is finished
+                        updateImageSettings();
+                        captureJustFinished = true;
+
+                        // Reset progress logging flags
+                        window.logged25 = false;
+                        window.logged50 = false;
+                        window.logged75 = false;
                     } else {
-                        statusBox.textContent = "Idle";
+                        document.getElementById("statusBox").textContent = "Idle";
                         setControlsEnabled(true);
                     }
                 });
         }
 
-        // Refresh displayed image.
-        function showImage() {
-            document.getElementById("capture_img").src = "/show?" + new Date().getTime();
+        // Show/hide image placeholder
+        function showImagePlaceholder() {
+            document.getElementById("capture_img").style.display = "none";
+            document.getElementById("image_placeholder").style.display = "block";
         }
 
-        setInterval(checkStatus, 1000);
+        function hideImagePlaceholder() {
+            document.getElementById("capture_img").style.display = "block";
+            document.getElementById("image_placeholder").style.display = "none";
+        }
+
+        // Refresh displayed image with settings.
+        function updateImageSettings() {
+            // Get all the image display settings
+            const histEq = document.getElementById("histEqCheck").checked;
+            const robust = document.getElementById("robustCheck").checked;
+            // const band = document.getElementById("bandSelect").value;
+            const stretch = document.getElementById("stretchRange").value;
+
+            // Build the query string with all parameters
+            const params = new URLSearchParams({
+                hist_eq: histEq,
+                robust: robust,
+                // band: band,
+                stretch: stretch,
+                t: new Date().getTime() // Cache buster
+            });
+
+            const imgElement = document.getElementById("capture_img");
+
+            // Set up load/error handlers
+            imgElement.onload = function () {
+                hideImagePlaceholder();
+            };
+
+            imgElement.onerror = function () {
+                showImagePlaceholder();
+            };
+
+            // Update the image source with the new parameters
+            imgElement.src = "/api/show?" + params.toString();
+        }
+
+        // Legacy function for backward compatibility
+        function showImage() {
+            updateImageSettings();
+        }
+
+        // Function to update detailed settings
+        function updateDetailedSettings() {
+            setControlsEnabled(false);
+            updateStatusBox("Updating advanced settings...");
+
+            // Create a settings object from the form inputs
+            var settings = {};
+            var arraySettings = {};
+
+            // Process all detailed settings inputs
+            document.querySelectorAll("#detailedSettingsForm .detailed-setting").forEach(function (input) {
+                var settingName = input.dataset.setting;
+                var settingType = input.dataset.type;
+
+                if (settingType === 'array_int') {
+                    // For array settings, collect all elements with the same setting name
+                    if (!arraySettings[settingName]) {
+                        arraySettings[settingName] = [];
+                    }
+                    var index = parseInt(input.dataset.index, 10);
+                    arraySettings[settingName][index] = parseInt(input.value, 10);
+                } else if (settingType === 'float') {
+                    settings[settingName] = parseFloat(input.value);
+                } else if (settingType === 'select') {
+                    settings[settingName] = input.value;
+                }
+            });
+
+            // Add all array settings to the main settings object
+            for (var key in arraySettings) {
+                settings[key] = arraySettings[key];
+            }
+
+            console.log("Sending detailed settings:", settings);
+
+            // Send the settings to the API
+            fetch("/api/update_settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === "success") {
+                        updateStatusBox("Advanced settings updated successfully!", "success");
+                    } else {
+                        updateStatusBox("Error updating settings: " + data.error, "error");
+                    }
+                    setControlsEnabled(true);
+                })
+                .catch(error => {
+                    console.error("Error updating advanced settings:", error);
+                    updateStatusBox("Error updating advanced settings: " + error.message, "error");
+                    setControlsEnabled(true);
+                });
+        }
+
+        // Message Log Functions
+        function logMessage(message, type = 'info') {
+            // Skip routine status messages
+            if (message === 'Idle' || message.startsWith('Collecting image...')) {
+                return;
+            }
+
+            const messageLog = document.getElementById('messageLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const cssClass = type === 'error' ? 'text-danger' :
+                type === 'success' ? 'text-success' : 'text-primary';
+
+            const messageElement = document.createElement('div');
+            messageElement.className = cssClass;
+            messageElement.innerHTML = `<small>${timestamp}</small> ${message}`;
+
+            messageLog.appendChild(messageElement);
+
+            // Auto-scroll to the bottom
+            messageLog.scrollTop = messageLog.scrollHeight;
+
+            // If not currently on the log tab, add a notification indicator
+            if (activeTabName !== 'log') {
+                const logTab = document.querySelector('#log-tab');
+                if (!logTab.querySelector('.badge')) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge rounded-pill bg-danger ms-2';
+                    badge.textContent = '!';
+                    logTab.appendChild(badge);
+                }
+            }
+        }
+
+        // Fetch and display logs from the server
+        function fetchLogs() {
+            fetch('/api/logs')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const messageLog = document.getElementById('messageLog');
+                        messageLog.innerHTML = ''; // Clear current logs
+
+                        // Add each log message to the display
+                        data.logs.forEach(log => {
+                            const cssClass = log.type === 'error' ? 'text-danger' :
+                                log.type === 'success' ? 'text-success' : 'text-primary';
+
+                            const messageElement = document.createElement('div');
+                            messageElement.className = cssClass;
+                            messageElement.innerHTML = `<small>${log.time}</small> ${log.message}`;
+
+                            messageLog.appendChild(messageElement);
+                        });
+
+                        // Auto-scroll to the bottom
+                        messageLog.scrollTop = messageLog.scrollHeight;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching logs:', error);
+                });
+        }
+
+        function clearMessageLog() {
+            // Clear logs on the server
+            fetch('/api/logs', { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Also clear the local display
+                        document.getElementById('messageLog').innerHTML = '';
+                        console.log('Logs cleared successfully');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error clearing logs:', error);
+                });
+
+            // Remove notification badge if present
+            const logTab = document.querySelector('#log-tab');
+            const badge = logTab.querySelector('.badge');
+            if (badge) {
+                badge.remove();
+            }
+        }
+
+        // Enhanced status box updater
+        function updateStatusBox(message, logType = null) {
+            document.getElementById("statusBox").innerHTML = message;
+
+            // Log the message if it's not a routine status update
+            if (logType) {
+                // Still call local logMessage for immediate display
+                logMessage(message, logType);
+
+                // But no need to call API to add message as the server will do this for status updates
+            }
+        }
+
+        // Time setting functions
+        function refreshCurrentTime() {
+            fetch('/api/time')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Format the datetime for display
+                        const dt = new Date(data.datetime);
+                        const formatted = dt.toLocaleString();
+                        document.getElementById('currentTime').value = formatted;
+
+                        // Also set the datetime-local input to current time
+                        const localDateTime = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                        document.getElementById('newDateTime').value = localDateTime;
+                    } else {
+                        console.error('Error getting current time:', data.error);
+                        document.getElementById('currentTime').value = 'Error getting time';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching current time:', error);
+                    document.getElementById('currentTime').value = 'Error fetching time';
+                });
+        }
+
+        function setSystemTime() {
+            const newDateTime = document.getElementById('newDateTime').value;
+
+            if (!newDateTime) {
+                updateStatusBox('Please select a date and time', 'error');
+                return;
+            }
+
+            setControlsEnabled(false);
+            updateStatusBox('Setting system time...', 'info');
+
+            // Convert datetime-local to ISO format
+            const isoDateTime = new Date(newDateTime).toISOString();
+
+            fetch('/api/time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datetime: isoDateTime })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateStatusBox(data.message, 'success');
+                        // Refresh the current time display
+                        refreshCurrentTime();
+                    } else {
+                        updateStatusBox('Error setting time: ' + data.error, 'error');
+                    }
+                    setControlsEnabled(true);
+                })
+                .catch(error => {
+                    console.error('Error setting system time:', error);
+                    updateStatusBox('Error setting system time: ' + error.message, 'error');
+                    setControlsEnabled(true);
+                });
+        }
+
+        // Initialize Bootstrap tabs
+        var activeTabName = 'control'; // Default active tab is now control
+
+        // Function to fetch and display version information
+        function fetchVersionInfo() {
+            fetch('/api/version')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('versionInfo').textContent =
+                            `${data.application} v${data.version}`;
+                    } else {
+                        document.getElementById('versionInfo').textContent = 'Version: Unknown';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching version:', error);
+                    document.getElementById('versionInfo').textContent = 'Version: Error';
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Fetch version information
+            fetchVersionInfo();
+
+            // Initialize image placeholder
+            showImagePlaceholder();
+            // Initialize tab click handlers - using Bootstrap's built-in tab functionality
+            document.querySelector('#settings-tab').addEventListener('shown.bs.tab', function () {
+                activeTabName = 'settings';
+                // Refresh current time when switching to settings tab
+                refreshCurrentTime();
+            });
+
+            document.querySelector('#detailed-tab').addEventListener('shown.bs.tab', function () {
+                activeTabName = 'detailed';
+            });
+
+            document.querySelector('#control-tab').addEventListener('shown.bs.tab', function () {
+                activeTabName = 'control';
+                // Refresh image when switching to control tab
+                updateImageSettings();
+            });
+
+            document.querySelector('#log-tab').addEventListener('shown.bs.tab', function () {
+                activeTabName = 'log';
+
+                // Fetch the latest logs when switching to the log tab
+                fetchLogs();
+
+                // Auto-scroll to the bottom of the log when switching to the log tab
+                const messageLog = document.getElementById('messageLog');
+                messageLog.scrollTop = messageLog.scrollHeight;
+
+                // Remove notification badge when viewing the log
+                const logTab = document.querySelector('#log-tab');
+                const badge = logTab.querySelector('.badge');
+                if (badge) {
+                    badge.remove();
+                }
+            });
+
+            // Load logs when page loads
+            fetchLogs();
+
+            // Set up periodic log refresh (every 10 seconds)
+            setInterval(function () {
+                if (activeTabName === 'log') {
+                    fetchLogs();
+                }
+            }, 10000);
+        });
+
+        setInterval(checkStatus, 500);
     </script>
 </body>
 
